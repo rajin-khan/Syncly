@@ -16,15 +16,19 @@
 
 **File Splitting & Uploading:**
 A. Automatically splits large files and uploads them across multiple Google Drive accounts.
+
 B. Secure and efficient storage distribution.
 
 **Unified Search:**
 A. Search across all connected Google Drive accounts from a single interface.
+
 B. Includes reverse image search capabilities.
 
 **Multi-Platform Support:**
 A. Web Interface: Built with React for an intuitive user experience.
+
 B. Mobile App: Developed using Kotlin/Java for seamless access on Android devices.
+
 C. Telegram Bot: Upload and search files using simple commands.
 
 **Download Functionality:**
@@ -32,6 +36,7 @@ A. Web and mobile interfaces allow easy file retrieval.
 
 **Security:**
 A. OAuth 2.0 authentication for secure Google Drive access.
+
 B. File encryption before upload for enhanced privacy. (Tentative)
 
 ---
