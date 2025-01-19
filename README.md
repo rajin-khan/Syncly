@@ -15,24 +15,24 @@
 ## Features
 
 **File Splitting & Uploading:**
-  - Automatically splits large files and uploads them across multiple Google Drive accounts.
-  - Secure and efficient storage distribution.
+A. Automatically splits large files and uploads them across multiple Google Drive accounts.
+B. Secure and efficient storage distribution.
 
 **Unified Search:**
-  - Search across all connected Google Drive accounts from a single interface.
-  - Includes reverse image search capabilities.
+A. Search across all connected Google Drive accounts from a single interface.
+B. Includes reverse image search capabilities.
 
 **Multi-Platform Support:**
-  - Web Interface: Built with React for an intuitive user experience.
-  - Mobile App: Developed using Kotlin/Java for seamless access on Android devices.
-  - Telegram Bot: Upload and search files using simple commands.
+A. Web Interface: Built with React for an intuitive user experience.
+B. Mobile App: Developed using Kotlin/Java for seamless access on Android devices.
+C. Telegram Bot: Upload and search files using simple commands.
 
 **Download Functionality:**
-  - Web and mobile interfaces allow easy file retrieval.
+A. Web and mobile interfaces allow easy file retrieval.
 
 **Security:**
-  - OAuth 2.0 authentication for secure Google Drive access.
-  - File encryption before upload for enhanced privacy. (Tentative)
+A. OAuth 2.0 authentication for secure Google Drive access.
+B. File encryption before upload for enhanced privacy. (Tentative)
 
 ---
 
@@ -66,14 +66,14 @@ Syncly/
 
 ---
 
-- Instructor: Dr. Nabeel Mohammed
+- Instructor: [Dr. Nabeel Mohammed](https://ece.northsouth.edu/people/dr-nabeel-mohammed/)
 - Trello Board: [Syncly Project Board](https://trello.com/b/o5OcT4uj/syncly)
 
 ---
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the **MIT License**.
 
 ---
 
@@ -83,9 +83,6 @@ This project is licensed under the MIT License.
 |---------------------------|-------------------------|--  |--------|------|
 | **Rajin Khan**            | North South University | 2212708042 | [![Rajin's GitHub](https://img.shields.io/badge/-rajin--khan-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/rajin-khan) | ![Followers](https://img.shields.io/github/followers/rajin-khan?label=Follow&style=social) |
 | **Ahnaf Ojayer**    | North South University | 2121949042 | [![Ahnaf's GitHub](https://img.shields.io/badge/-0jayer-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/0jayer) | ![Followers](https://img.shields.io/github/followers/0jayer?label=Follow&style=social) |
-| **Rihal Mahmood**    | North South University | - | [![Rihal's GitHub](https://img.shields.io/badge/-N/A-181717?style=for-the-badge&logo=github&logoColor=white)](#) | ![Followers](https://img.shields.io/badge/Followers-N/A-lightgrey) |
-
-
-
+| **Rihal Mahmood**    | North South University | 2132378042 | [![Rihal's GitHub](https://img.shields.io/badge/-RihalMahmood-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/RihalMahmood) | ![Followers](https://img.shields.io/github/followers/RihalMahmood?label=Follow&style=social) |
 
 </div>
