@@ -49,6 +49,8 @@
 
 ## 🗂️ Project Structure (Tentative)
 
+</div>
+
 ```
 Syncly/
 ├── 📂 frontend/      # React Web Application
@@ -59,6 +61,9 @@ Syncly/
 ├── 📂 tests/         # Automated Tests
 └── 📄 README.md      # This file
 ```
+
+<div align="center">
+
 ---
 
 - Instructor: Dr. Nabeel Mohammed
