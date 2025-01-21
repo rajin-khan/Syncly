@@ -48,7 +48,7 @@ B. File encryption before upload for enhanced privacy. (Tentative)
 
 ## 🧑🏻‍💻 Tech Stack (Tentative)
 
-- **Frontend:** React (Web), Kotlin/Java (Mobile)
+- **Frontend:** Vite + React (TypeScript) (Web), Kotlin/Java (Mobile)
 - **Backend:** Python (Flask/FastAPI) or Node.js (Express)
 - **Database:** PostgreSQL/MySQL for metadata management
 - **Cloud Storage:** Google Drive API
@@ -63,7 +63,7 @@ B. File encryption before upload for enhanced privacy. (Tentative)
 
 ```
 Syncly/
-├── 📂 frontend/      # React Web Application
+├── 📂 frontend/      # Vite + React (TypeScript) Web Application
 ├── 📂 mobile/        # Android App (Kotlin/Java)
 ├── 📂 backend/       # API Backend (Flask/FastAPI or Express)
 ├── 📂 bot/           # Telegram Bot
