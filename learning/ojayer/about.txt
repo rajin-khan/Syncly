@@ -1,1 +1,11 @@
 this folder contains code used to learn relevant technology, by Ahnaf Ojayer
+
+#Logs
+
+#22/01/2025
+
+-Created a file splitter in python (splitting them into chunks)
+
+#23/01/2025
+
+-Created a file merger in python (merging chunks into the original foler
