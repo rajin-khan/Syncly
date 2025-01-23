@@ -1,1 +1,1 @@
-this folder contains code used to learn relevant technology, by Rihal Mahmood
+This folder contains code used to learn mobile app developement using JavaFx, by Quazi Rihal Mahmood
