@@ -36,7 +36,7 @@ def split_file(file_path, chunk_size):
                 break
 
             #open the chunk in write binary mode
-            chunk_file = open(f"{file_path}.part{file_chunk}.csv", 'wb')
+            chunk_file = open(f"{file_path}.part{file_chunk}", 'wb')
             try:
                 #write a part into the chunk file 
                 chunk_file.write(chunk)
@@ -57,7 +57,7 @@ file_path = 'csv_result-Rice_Cammeo_Osmancik new.csv'
 chunk_size = 1024*10
 
 #split_file(file_path,chunk_size)
-
+split_file(file_path,chunk_size)
 # no of files divided into take this from the split function  for the actual code
 file_num = 32
 # outputfile for when we download, name will be taken from user in actual code
@@ -68,7 +68,7 @@ chunk_path_list = []
 
 for i in range(file_num):
     # taking each individial chunk path
-    chunk_name = f"csv_result-Rice_Cammeo_Osmancik new.csv.part{i}.csv"
+    chunk_name = f"csv_result-Rice_Cammeo_Osmancik new.csv.part{i}"
     #if it exists append them to the list
     if os.path.exists(chunk_name):
         chunk_path_list.append(chunk_name)
@@ -77,3 +77,4 @@ for i in range(file_num):
         print(f"Warning: {chunk_name} does not exist.")
 
 merge_file(new_file,chunk_path_list)
+
