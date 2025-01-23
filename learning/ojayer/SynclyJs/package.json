@@ -1,0 +1,28 @@
+{
+  "dependencies": {
+    "express": "^4.21.2"
+  },
+  "name": "syncly",
+  "version": "1.0.0",
+  "description": "backend part of syncly",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rajin-khan/syncly.git#main"
+  },
+  "keywords": [
+    "Syncly",
+    "ExpressJs",
+    "NodeJs",
+    "JavaScript"
+  ],
+  "author": "Ahanf Ojayer",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rajin-khan/syncly/issues"
+  },
+  "homepage": "https://github.com/rajin-khan/syncly/tree/main#readme"
+}
