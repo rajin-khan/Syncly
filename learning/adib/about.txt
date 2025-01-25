@@ -1,1 +1,11 @@
 this folder contains code used to learn relevant technology, by Adib Ar Rahman Khan
+
+props:
+    must be treated as immutable, 
+    similar to function args
+whereas,
+state :
+    is mutable.
+    similar to local vars
+
+BOTH can cause a re-render to update the DOM accordingly.
