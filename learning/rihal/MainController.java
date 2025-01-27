@@ -18,9 +18,9 @@ public class MainController {
         Button addAccountButton = new Button("Add Google Account");
         ListView<String> accountsList = new ListView<>();
 
-        // Event to add account
+        //Event to add account
         addAccountButton.setOnAction(e -> {
-            // Handle Google account login and add account
+            //Handle Google account login and add account
             String account = addGoogleAccount();
             if (account != null) {
                 accountsList.getItems().add(account);
@@ -31,7 +31,7 @@ public class MainController {
     }
 
     private String addGoogleAccount() {
-        // TODO: Implement Google OAuth2 login and return account email
+        //TODO: Implement Google OAuth2 login and return account email
         return "user@example.com";
     }
 }

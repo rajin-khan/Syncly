@@ -14,7 +14,7 @@ public class HomePage extends Application {
         VBox root = new VBox();
         Scene scene = new Scene(root, 600, 400);
 
-        // Initialize the main UI controller
+        //Initialize the main UI controller
         MainController mainController = new MainController(root);
         mainController.initUI();
 
