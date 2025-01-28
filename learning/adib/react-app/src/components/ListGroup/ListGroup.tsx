@@ -1,16 +1,29 @@
 import { useState } from "react";
-import styles from './ListGroup.module.css'
+import styles from "./ListGroup.css";
+import styled from "styled-components";
 
-interface Props {
-    items: string[];
-    heading: string;
-    onSelectItem: (item: string) => void
+const List = styled.ul`
+  list-style: none;
+  padding: 0;
+`;
+
+interface ListItemProps {
+    active: boolean;
 }
 
-function ListGroup({items, heading, onSelectItem}: Props) {
+const ListItem = styled.li<ListItemProps>`
+    padding: 5px 0;
+    background: ${props => props.active ? 'blue' : 'null'}
+`
+interface Props {
+  items: string[];
+  heading: string;
+  onSelectItem: (item: string) => void;
+}
 
+function ListGroup({ items, heading, onSelectItem }: Props) {
   //Hook
-  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
   //below, we learn how true && 1 = 1, or true && 'rajin' = 'rajin', and false && 'rajin' = false
   //this is often used in conditional rendering.
@@ -18,14 +31,10 @@ function ListGroup({items, heading, onSelectItem}: Props) {
     <>
       <h1>{heading}</h1>
       {items.length === 0 && <p>No item found</p>}
-      <ul className={[styles.listGroup, styles.container].join(' ')}>
+      <List className="list-group">
         {items.map((item, index) => (
-          <li
-            className={
-              selectedIndex === index
-                ? "list-group-item active"
-                : "list-group-item"
-            }
+          <ListItem
+          active={index===selectedIndex}
             key={item}
             onClick={() => {
               setSelectedIndex(index);
@@ -33,9 +42,9 @@ function ListGroup({items, heading, onSelectItem}: Props) {
             }}
           >
             {item}
-          </li>
+          </ListItem>
         ))}
-      </ul>
+      </List>
     </>
   );
 }
