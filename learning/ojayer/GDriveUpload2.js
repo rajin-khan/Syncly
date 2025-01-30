@@ -66,7 +66,7 @@ async function splitFile(filePath, chunkSize, folderId) {
         // Upload the chunk to Google Drive
         const chunkFileName = `${path.basename(filePath)}.part${chunkIndex}`;
         // Upload the chunk to Google Drive directly from the stream
-        const fileId = await uploadToDrive(drive, chunk, chunkFileName, folderId);
+        const fileId = await uploadToDrive(drive, chunk, chunkFileName, folderId[2]);
         console.log(`Uploaded chunk ${chunkIndex} with file ID: ${fileId}`);
         // Store the chunk ID
         chunkIds.push(fileId);
@@ -114,7 +114,7 @@ async function mergeFiles(outputFilePath, metadataFile) {
 // File path and chunk size
 const filePath = "csv_result-Rice_Cammeo_Osmancik new.csv";
 const chunkSize = 1024 * 10; // 10 KB
-const folderId = "13QsCiHzjSm26gKPiomrtJaSpBcHFlZzF";
+const folderId = ["1Asi8ynnuI4CtH21mPFoVZAl-Oqlna1-F","13QsCiHzjSm26gKPiomrtJaSpBcHFlZzF","1m-cqxt7jrGOQ9dYoX65d7PqcnG1sBZlB"];
 const metadataFile = `csv_result-Rice_Cammeo_Osmancik new.csv.metadata.json`;
 
 // Uncomment to split and upload
