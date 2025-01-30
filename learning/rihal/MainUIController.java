@@ -17,7 +17,7 @@ public class MainUIController {
         VBox sidebar = createSidebar();
         VBox content = createContent();
 
-        // Add sections to the root layout
+        //Add sections to the root layout
         root.setTop(header);
         root.setLeft(sidebar);
         root.setCenter(content);
@@ -45,7 +45,7 @@ public class MainUIController {
         sidebar.setStyle("-fx-background-color: #f4f4f4;");
         sidebar.setPrefWidth(200);
 
-        // Event handlers for navigation
+        //Event handlers for navigation
         addAccountButton.setOnAction(e -> displayAccounts());
         uploadFileButton.setOnAction(e -> displayUploadScreen());
         settingsButton.setOnAction(e -> displaySettings());
@@ -89,7 +89,7 @@ public class MainUIController {
 
         root.setCenter(uploadScreen);
 
-        // Event handler for file upload
+        //Event handler for file upload
         chooseFileButton.setOnAction(e -> {
             // TODO: Implement file chooser and upload logic
             uploadProgress.setProgress(0.5); // Mock progress
