@@ -13,6 +13,8 @@ public class HomePage extends Application {
 
         VBox root = new VBox();
         Scene scene = new Scene(root, 600, 400);
+        scene.getStylesheets().add(getClass().getResource("styles.css").toExternalForm());
+
 
         //Initialize the main UI controller
         MainController mainController = new MainController(root);
