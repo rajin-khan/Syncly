@@ -8,7 +8,7 @@ const credentials = JSON.parse(fs.readFileSync('credentials.json', 'utf8')).web;
 const oauth2Client = new google.auth.OAuth2(
     credentials.client_id,
     credentials.client_secret,
-    credentials.redirect_uris[0] // Make sure this is the updated callback URI
+    credentials.redirect_uris[0] 
 );
 
 const SCOPES = ['https://www.googleapis.com/auth/drive'];
@@ -45,18 +45,3 @@ router.get('/auth/google/callback', async (req, res) => {
 });
 
 module.exports = router;
-
-
-
-const authRoutes = require('./auth');
-
-const app = express();
-app.use(authRoutes);
-
-app.get('/', (req, res) => {
-  res.send('Welcome to the Express server!');
-});
-
-app.listen(5500, () => {
-    console.log('Server running on http://localhost:5500');
-});
