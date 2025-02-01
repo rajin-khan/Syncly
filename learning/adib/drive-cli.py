@@ -3,9 +3,18 @@ import json
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.oauth2.credentials import Credentials
+from dotenv import load_dotenv
+
+#load env variables
+load_dotenv()
 
 #api scope = read only
 SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
+
+#get paths from env
+TOKEN_DIR = os.getenv("TOKEN_DIR", "tokens")  #default to "tokens" if not set
+CREDENTIALS_FILE = os.getenv("CREDENTIALS_FILE", "credentials.json")  #default to "credentials.json" if not set
+os.makedirs(TOKEN_DIR, exist_ok=True)  #ensure token dir exists
 
 #store auth tokens in a separate dir
 TOKEN_DIR = "UNI/SEM10-SOFTENG-PROJECT/learning/adib/tokens"
