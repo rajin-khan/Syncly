@@ -16,11 +16,6 @@ TOKEN_DIR = os.getenv("TOKEN_DIR", "tokens")  #default to "tokens" if not set
 CREDENTIALS_FILE = os.getenv("CREDENTIALS_FILE", "credentials.json")  #default to "credentials.json" if not set
 os.makedirs(TOKEN_DIR, exist_ok=True)  #ensure token dir exists
 
-#store auth tokens in a separate dir
-TOKEN_DIR = "UNI/SEM10-SOFTENG-PROJECT/learning/adib/tokens"
-CREDENTIALS_FILE = "UNI/SEM10-SOFTENG-PROJECT/learning/adib/client_secret_1018759720940-cldlj2e2vv7i79d66ttd6qf18s8qp9e7.apps.googleusercontent.com.json"
-os.makedirs(TOKEN_DIR, exist_ok=True)
-
 def authenticate_account(bucket_number):
     token_path = os.path.join(TOKEN_DIR, f"bucket_{bucket_number}.json")
 
