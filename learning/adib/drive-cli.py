@@ -4,75 +4,96 @@ from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.oauth2.credentials import Credentials
 
-# api scope set to read only
+#api scope = read only
 SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
 
-# store auth tokens in a separate directory
+#store auth tokens in a separate dir
 TOKEN_DIR = "UNI/SEM10-SOFTENG-PROJECT/learning/adib/tokens"
 CREDENTIALS_FILE = "UNI/SEM10-SOFTENG-PROJECT/learning/adib/client_secret_1018759720940-cldlj2e2vv7i79d66ttd6qf18s8qp9e7.apps.googleusercontent.com.json"
 os.makedirs(TOKEN_DIR, exist_ok=True)
 
-def authenticate_account(account_name):
-
-    token_path = os.path.join(TOKEN_DIR, f"{account_name}.json")
+def authenticate_account(bucket_number):
+    token_path = os.path.join(TOKEN_DIR, f"bucket_{bucket_number}.json")
 
     if os.path.exists(token_path):
         creds = Credentials.from_authorized_user_file(token_path, SCOPES)
         if creds.valid:
             return build("drive", "v3", credentials=creds)
 
-    # re-authenticate if required
+    #re-auth tokens if needed
     flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_FILE, SCOPES)
-    creds = flow.run_local_server()
+    creds = flow.run_local_server(port=0)
 
-    # save creds
+    #saved creds
     with open(token_path, "w") as token_file:
         token_file.write(creds.to_json())
 
     return build("drive", "v3", credentials=creds)
 
-def list_drive_files(service, max_results=10):
 
+def list_drive_files(service, max_results=10):
     results = service.files().list(
         pageSize=max_results,
         fields="files(id, name, mimeType, size)"
     ).execute()
 
-    files = results.get('files', [])
+    return results.get('files', [])
 
-    if not files:
-        print("No files found.")
-    else:
-        print("\nFiles in Google Drive:")
-        for file in files:
-            print(f"{file['name']} ({file.get('mimeType')})")
+#get tokens for buckets
+def get_all_authenticated_buckets():
+    return [f.replace(".json", "").replace("bucket_", "") for f in os.listdir(TOKEN_DIR) if f.startswith("bucket_")]
 
-def switch_accounts():
+#ls
+def list_files_from_all_buckets():
+    bucket_numbers = get_all_authenticated_buckets()
+    if not bucket_numbers:
+        print("No authenticated buckets found. Please add a new bucket first.")
+        return
 
-    accounts = [f.replace(".json", "") for f in os.listdir(TOKEN_DIR) if f.endswith(".json")]
+    all_files = []
 
-    if not accounts:
-        print("No authenticated accounts found. Please authenticate a new account first.")
-        email = input("Enter a unique name for this account (e.g., 'user1', 'user2'): ")
-        return authenticate_account(email)
+    for idx, bucket in enumerate(bucket_numbers, start=1):
+        print(f"\nAccessing Bucket {idx}...")
+        try:
+            service = authenticate_account(bucket)
+            files = list_drive_files(service, max_results=10)
+            for file in files:
+                all_files.append((file['name'], file['id'], file.get('mimeType', 'Unknown'), file.get('size', 'Unknown')))
+        except Exception as e:
+            print(f"Error retrieving files for Bucket {idx}: {e}")
 
-    print("\nAvailable Google Accounts:")
-    for idx, account in enumerate(accounts, start=1):
-        print(f"{idx}. {account}")
+    # Sort files alphabetically by name
+    all_files.sort(key=lambda x: x[0])
 
-    choice = input("\nSelect an account number (or type 'new' to add another): ")
-    if choice.lower() == "new":
-        email = input("Enter a unique name for this account: ")
-        return authenticate_account(email)
-    elif choice.isdigit() and 1 <= int(choice) <= len(accounts):
-        return authenticate_account(accounts[int(choice) - 1])
-    else:
-        print("Invalid choice.")
-        return None
+    # Display first 10 files after sorting
+    print("\nFirst 10 Files Across All Buckets (Sorted Alphabetically):")
+    for idx, (name, file_id, mime_type, size) in enumerate(all_files[:10], start=1):
+        size_str = f"{size} bytes" if size != 'Unknown' else "Unknown size"
+        print(f"{idx}. {name} ({mime_type}) - {size_str}")
+
+def add_new_bucket():
+    bucket_number = len(get_all_authenticated_buckets()) + 1
+    print(f"\nAdding a new bucket: Bucket {bucket_number}...")
+    authenticate_account(bucket_number)
+    print(f" Bucket {bucket_number} added successfully!")
 
 if __name__ == "__main__":
-    print("drive cli beta (viewer)")
+    print("Syncly Demo 1")
 
-    service = switch_accounts()
-    if service:
-        list_drive_files(service)
+    while True:
+        print("\nOptions:")
+        print("1️. View Files (Sorted Alphabetically)")
+        print("2️. Add New Bucket")
+        print("3️. Exit")
+
+        choice = input("Choose an option (Enter a number): ")
+
+        if choice == "1":
+            list_files_from_all_buckets()
+        elif choice == "2":
+            add_new_bucket()
+        elif choice == "3":
+            print("Thank you for using Syncly's Demo 1!")
+            break
+        else:
+            print("Invalid option. Please try again.")
