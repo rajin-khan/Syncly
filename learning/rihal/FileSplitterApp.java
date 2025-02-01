@@ -25,7 +25,7 @@ public class FileSplitterApp extends Application {
     public void start(Stage primaryStage) {
         primaryStage.setTitle("File Splitter");
 
-        // UI Components
+        //UI Components
         Label fileLabel = new Label("Selected File: None");
         Button selectFileButton = new Button("Select File");
         Label chunkSizeLabel = new Label("Chunk Size (in bytes):");
@@ -33,10 +33,10 @@ public class FileSplitterApp extends Application {
         Button splitButton = new Button("Split File");
         Label statusLabel = new Label();
 
-        // File Chooser
+        //File Chooser
         FileChooser fileChooser = new FileChooser();
 
-        // Event Handlers
+        //Event Handlers
         selectFileButton.setOnAction(e -> {
             selectedFile = fileChooser.showOpenDialog(primaryStage);
             if (selectedFile != null) {
@@ -67,18 +67,18 @@ public class FileSplitterApp extends Application {
             }
         });
 
-        // Layout
+        //Layout
         VBox layout = new VBox(10);
         layout.setPadding(new Insets(10));
         layout.getChildren().addAll(fileLabel, selectFileButton, chunkSizeLabel, chunkSizeField, splitButton, statusLabel);
 
-        // Scene
+        //Scene
         Scene scene = new Scene(layout, 400, 200);
         primaryStage.setScene(scene);
         primaryStage.show();
     }
 
-    // Method to split the file
+    //Method to split the file
     private void splitFile(File file, int chunkSize) throws IOException {
         try (FileInputStream fis = new FileInputStream(file)) {
             byte[] buffer = new byte[chunkSize];
