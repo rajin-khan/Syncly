@@ -6,10 +6,9 @@ const app = express();
 app.use(authRoutes);
 
 app.get('/', (req, res) => {
-  res.send('Welcome to the Express server!');
+  res.send('<a href="http://localhost:5500/auth/google">Authenticate User</a>');
 });
 
 app.listen(5500, () => {
     console.log('Server running on http://localhost:5500');
-    console.log('Authenticate using the following link: http://localhost:5500/auth/google');
 });
