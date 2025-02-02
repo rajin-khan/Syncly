@@ -34,61 +34,120 @@ def authenticate_account(bucket_number):
 
     return build("drive", "v3", credentials=creds)
 
+def list_drive_files(service, max_results=None):
+    all_files = []
+    page_token = None
 
-def list_drive_files(service, max_results=10):
-    results = service.files().list(
-        pageSize=max_results,
-        fields="files(id, name, mimeType, size)"
-    ).execute()
+    while True:
+        results = service.files().list(
+            pageSize=100,  #fetch 100 files per API request
+            fields="nextPageToken, files(id, name, mimeType, size)",
+            pageToken=page_token
+        ).execute()
 
-    return results.get('files', [])
+        all_files.extend(results.get('files', []))
 
-#get tokens for buckets
+        #stop early if we reach the requested limit
+        if max_results and len(all_files) >= max_results:
+            return all_files[:max_results]
+
+        page_token = results.get('nextPageToken')
+        if not page_token:
+            break  #no more pages left
+
+    return all_files
+
 def get_all_authenticated_buckets():
     return [f.replace(".json", "").replace("bucket_", "") for f in os.listdir(TOKEN_DIR) if f.startswith("bucket_")]
 
-#ls
 def list_files_from_all_buckets():
     bucket_numbers = get_all_authenticated_buckets()
     if not bucket_numbers:
         print("No authenticated buckets found. Please add a new bucket first.")
         return
 
-    all_files = []
+    #ask user for the number of files to retrieve
+    print("\nHow many files would you like to retrieve? (More files take longer to retrieve)")
+    print("1: ~ 50 files")
+    print("2: ~ 100 files")
+    print("3: ~ 500 files")
+    print("4: All available files (Takes much longer)")
 
-    for idx, bucket in enumerate(bucket_numbers, start=1):
-        print(f"\nAccessing Bucket {idx}...")
+    choice = input("Enter a number (1-4): ").strip()
+
+    if choice == "1":
+        max_files = 50
+    elif choice == "2":
+        max_files = 100
+    elif choice == "3":
+        max_files = 500
+    elif choice == "4":
+        max_files = None  #fetch all files
+        print("\nFetching all available files... This may take longer.")
+    else:
+        print("Invalid choice. Defaulting to 100 files.")
+        max_files = 100
+
+    all_files = []
+    total_storage = 0
+    total_used = 0
+
+    for bucket in bucket_numbers:
         try:
             service = authenticate_account(bucket)
-            files = list_drive_files(service, max_results=10)
+            files = list_drive_files(service, max_files)  #retrieve user-defined limit
             for file in files:
                 all_files.append((file['name'], file['id'], file.get('mimeType', 'Unknown'), file.get('size', 'Unknown')))
-        except Exception as e:
-            print(f"Error retrieving files for Bucket {idx}: {e}")
 
-    # Sort files alphabetically by name
+            #retrieve storage info from each bucket
+            res = service.about().get(fields='storageQuota').execute()
+            total_storage += int(res["storageQuota"]["limit"])
+            total_used += int(res["storageQuota"]["usage"])
+
+        except Exception as e:
+            print(f"Error retrieving files or storage details for a bucket: {e}")
+
+    #sort files alphabetically by name
     all_files.sort(key=lambda x: x[0])
 
-    # Display first 10 files after sorting
-    print("\nFirst 10 Files Across All Buckets (Sorted Alphabetically):")
-    for idx, (name, file_id, mime_type, size) in enumerate(all_files[:10], start=1):
-        size_str = f"{size} bytes" if size != 'Unknown' else "Unknown size"
-        print(f"{idx}. {name} ({mime_type}) - {size_str}")
+    #pagination
+    page_size = 30
+    total_files = len(all_files)
+    start_index = 0
+
+    while start_index < total_files:
+        #display total storage info on every page
+        print(f"\nTotal Storage: {round(total_storage / (1024**3), 2)} GB")
+        print(f"Total Used: {round(total_used / (1024**3), 2)} GB")
+        print(f"Total Free: {round((total_storage - total_used) / (1024**3), 2)} GB")
+
+        #display paginated file results
+        print("\nFiles (Sorted Alphabetically):\n")
+        for idx, (name, file_id, mime_type, size) in enumerate(all_files[start_index:start_index+page_size], start=start_index+1):
+            size_str = f"{float(size)/1024**2:.2f} MB" if size != 'Unknown' else "Unknown size"
+            print(f"{idx}. {name} ({mime_type}) - {size_str}")
+
+        start_index += page_size  #move to next batch of files
+
+        if start_index < total_files:
+            more = input("\nDo you want to see more files? (y/n): ").strip().lower()
+            if more != 'y':
+                break
 
 def add_new_bucket():
     bucket_number = len(get_all_authenticated_buckets()) + 1
     print(f"\nAdding a new bucket: Bucket {bucket_number}...")
     authenticate_account(bucket_number)
-    print(f" Bucket {bucket_number} added successfully!")
+    print(f"Bucket {bucket_number} added successfully!")
 
 if __name__ == "__main__":
     print("Syncly Demo 1")
 
     while True:
         print("\nOptions:")
-        print("1️. View Files (Sorted Alphabetically)")
-        print("2️. Add New Bucket")
-        print("3️. Exit")
+        print("1: View Files")
+        print("2: Add New Bucket")
+        print("3: Exit")
 
         choice = input("Choose an option (Enter a number): ")
 
