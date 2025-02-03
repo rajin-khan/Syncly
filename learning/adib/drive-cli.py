@@ -34,15 +34,17 @@ def authenticate_account(bucket_number):
 
     return build("drive", "v3", credentials=creds)
 
-def list_drive_files(service, max_results=None):
+def list_drive_files(service, max_results=None, query=None):
     all_files = []
     page_token = None
+    query_filter = f"name contains '{query}'" if query else None  #apply search filter if provided
 
     while True:
         results = service.files().list(
             pageSize=100,  #fetch 100 files per API request
             fields="nextPageToken, files(id, name, mimeType, size)",
-            pageToken=page_token
+            pageToken=page_token,
+            q=query_filter  #apply search filter
         ).execute()
 
         all_files.extend(results.get('files', []))
@@ -60,33 +62,38 @@ def list_drive_files(service, max_results=None):
 def get_all_authenticated_buckets():
     return [f.replace(".json", "").replace("bucket_", "") for f in os.listdir(TOKEN_DIR) if f.startswith("bucket_")]
 
-def list_files_from_all_buckets():
+def list_files_from_all_buckets(query=None):
     bucket_numbers = get_all_authenticated_buckets()
     if not bucket_numbers:
         print("No authenticated buckets found. Please add a new bucket first.")
         return
 
-    #ask user for the number of files to retrieve
-    print("\nHow many files would you like to retrieve? (More files take longer to retrieve)")
-    print("1: ~ 50 files")
-    print("2: ~ 100 files")
-    print("3: ~ 500 files")
-    print("4: All available files (Takes much longer)")
-
-    choice = input("Enter a number (1-4): ").strip()
-
-    if choice == "1":
-        max_files = 50
-    elif choice == "2":
-        max_files = 100
-    elif choice == "3":
-        max_files = 500
-    elif choice == "4":
-        max_files = None  #fetch all files
-        print("\nFetching all available files... This may take longer.")
+    if query:
+        print(f"\nSearching for files containing: '{query}' across all buckets...")
     else:
-        print("Invalid choice. Defaulting to 100 files.")
-        max_files = 100
+        #ask user for the number of files to retrieve
+        print("\nHow many files would you like to retrieve? (More files take longer to retrieve)")
+        print("1: ~ 50 files")
+        print("2: ~ 100 files")
+        print("3: ~ 500 files")
+        print("4: All available files (Takes much longer)")
+
+        choice = input("Enter a number (1-4): ").strip()
+
+        if choice == "1":
+            max_files = 50
+        elif choice == "2":
+            max_files = 100
+        elif choice == "3":
+            max_files = 500
+        elif choice == "4":
+            max_files = None  #fetch all files
+            print("\nFetching all available files... This may take longer.")
+        else:
+            print("Invalid choice. Defaulting to 100 files.")
+            max_files = 100
+            
+    max_files = None  #in search mode, fetch all matches
 
     all_files = []
     total_storage = 0
@@ -95,7 +102,7 @@ def list_files_from_all_buckets():
     for bucket in bucket_numbers:
         try:
             service = authenticate_account(bucket)
-            files = list_drive_files(service, max_files)  #retrieve user-defined limit
+            files = list_drive_files(service, max_files, query)  #retrieve user-defined limit or search query
             for file in files:
                 all_files.append((file['name'], file['id'], file.get('mimeType', 'Unknown'), file.get('size', 'Unknown')))
 
@@ -134,6 +141,13 @@ def list_files_from_all_buckets():
             if more != 'y':
                 break
 
+def search_files():
+    query = input("\nEnter a keyword to search for files across all buckets: ").strip()
+    if not query:
+        print("Invalid input. Returning to menu.")
+        return
+    list_files_from_all_buckets(query=query)
+
 def add_new_bucket():
     bucket_number = len(get_all_authenticated_buckets()) + 1
     print(f"\nAdding a new bucket: Bucket {bucket_number}...")
@@ -146,16 +160,19 @@ if __name__ == "__main__":
     while True:
         print("\nOptions:")
         print("1: View Files")
-        print("2: Add New Bucket")
-        print("3: Exit")
+        print("2: Search Files")
+        print("3: Add New Bucket")
+        print("4: Exit")
 
         choice = input("Choose an option (Enter a number): ")
 
         if choice == "1":
             list_files_from_all_buckets()
         elif choice == "2":
-            add_new_bucket()
+            search_files()
         elif choice == "3":
+            add_new_bucket()
+        elif choice == "4":
             print("Thank you for using Syncly's Demo 1!")
             break
         else:
