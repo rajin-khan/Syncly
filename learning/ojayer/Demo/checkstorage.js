@@ -16,13 +16,6 @@ const oauth2Client = new google.auth.OAuth2(
     credentials.redirect_uris[0],
 );
 
-const SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly'];
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
-
-
 // Check storage using saved tokens
 async function checkAllStorage() {
     require('dotenv').config(); // Load .env tokens
