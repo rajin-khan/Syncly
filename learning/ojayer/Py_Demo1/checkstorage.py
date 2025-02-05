@@ -20,31 +20,7 @@ with open('credentials.json', 'r') as f:
 SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
 TOTAL_ACCOUNTS = 3
 
-def save_refresh_token(account_number, refresh_token):
-    env_var = f"ACCOUNT_{account_number}_REFRESH_TOKEN"
-    env_content = ""
-    if os.path.exists(ENV_PATH):
-        with open(ENV_PATH, 'r') as f:
-            env_content = f.read()
-    
-    # Replace existing token or append new one
-    if env_var in env_content:
-        env_content = '\n'.join(
-            [line if not line.startswith(env_var) else f"{env_var}={refresh_token}" for line in env_content.split('\n')]
-        )
-    else:
-        env_content += f"\n{env_var}={refresh_token}\n"
-    
-    with open(ENV_PATH, 'w') as f:
-        f.write(env_content)
-    print(f"Refresh token saved for Account {account_number}!")
 
-def authorize_and_save_token(account_number):
-    flow = InstalledAppFlow.from_client_config({"installed": credentials}, SCOPES)
-    creds = flow.run_local_server(port=0,access_type='offline', prompt='consent')
-    save_refresh_token(account_number, creds.refresh_token)
-
-    print('\nAll tokens saved! Now checking storage...')
 def check_storage(account):
     try:
             creds = Credentials(
@@ -88,10 +64,6 @@ def check_all_storage():
     print(f"Total Storage: {round(total_storage / (1024**3))} GB")
     print(f"Total Used: {round(total_used / (1024**3))} GB")
     print(f"Total Free: {round((total_storage - total_used) / (1024**3))} GB")
-
-if __name__ == "__main__":
-    check_all_storage()
-
 
 if __name__ == "__main__":
     check_all_storage()
