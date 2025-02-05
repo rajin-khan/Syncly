@@ -6,10 +6,10 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from dotenv import load_dotenv
 
 # Load or create .env file
-ENV_PATH = 'store.env'
+ENV_PATH = '.env'
 if not os.path.exists(ENV_PATH):
     with open(ENV_PATH, 'w') as f:
-        f.write('store')
+        f.write('')
 
 load_dotenv()  # Load environment variables
 
@@ -45,20 +45,8 @@ def authorize_and_save_token(account_number):
     save_refresh_token(account_number, creds.refresh_token)
 
     print('\nAll tokens saved! Now checking storage...')
-
-
-def check_all_storage():
-    accounts = [
-        {"name": "Account 1", "refresh_token": os.getenv("ACCOUNT_1_REFRESH_TOKEN")},
-        {"name": "Account 2", "refresh_token": os.getenv("ACCOUNT_2_REFRESH_TOKEN")},
-        {"name": "Account 3", "refresh_token": os.getenv("ACCOUNT_3_REFRESH_TOKEN")},
-    ]
-    
-    total_storage = 0
-    total_used = 0
-    
-    for account in accounts:
-        try:
+def check_storage(account):
+    try:
             creds = Credentials(
                 None,  # Access token (not needed, as we use refresh token)
                 refresh_token=account['refresh_token'],
@@ -71,19 +59,39 @@ def check_all_storage():
             
             limit = int(res['storageQuota']['limit'])
             usage = int(res['storageQuota']['usage'])
-            total_storage += limit
-            total_used += usage
+            
             
             print(f"\n--- {account['name']} ---")
             print(f"Total: {round(limit / (1024**3))} GB")
             print(f"Used: {round(usage / (1024**3))} GB")
-        except Exception as e:
+            
+    except Exception as e:
             print(f"Error for {account['name']}: {e}")
     
+    return limit,usage
+
+def check_all_storage():
+    accounts = [
+        {"name": "Account 1", "refresh_token": os.getenv("ACCOUNT_1_REFRESH_TOKEN")},
+        {"name": "Account 2", "refresh_token": os.getenv("ACCOUNT_2_REFRESH_TOKEN")},
+        {"name": "Account 3", "refresh_token": os.getenv("ACCOUNT_3_REFRESH_TOKEN")},
+    ]
+    
+    total_storage = 0
+    total_used = 0
+    
+    for account in accounts:
+        storage,used = check_storage(account)
+        total_storage+=storage
+        total_used+=used
     print("\n--- Storage details ---")
     print(f"Total Storage: {round(total_storage / (1024**3))} GB")
     print(f"Total Used: {round(total_used / (1024**3))} GB")
     print(f"Total Free: {round((total_storage - total_used) / (1024**3))} GB")
+
+if __name__ == "__main__":
+    check_all_storage()
+
 
 if __name__ == "__main__":
     check_all_storage()
