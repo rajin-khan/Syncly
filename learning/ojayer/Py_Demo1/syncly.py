@@ -103,7 +103,7 @@ def check_all_storage():
         storage,used = check_storage(service,bucket)
         total_storage += storage
         total_used += used
-    print(f"\nTotal Storage: {round(total_storage / (1024**3), 2)} GB")
+    print(f"Total Storage: {round(total_storage / (1024**3), 2)} GB")
     print(f"Total Used: {round(total_used / (1024**3), 2)} GB")
     print(f"Total Free: {round((total_storage - total_used) / (1024**3), 2)} GB")
         
@@ -143,8 +143,6 @@ def list_files_from_all_buckets(query=None):
     max_files = None  #in search mode, fetch all matches
 
     all_files = []
-    total_storage = 0
-    total_used = 0
 
     for bucket in bucket_numbers:
         try:
@@ -165,7 +163,7 @@ def list_files_from_all_buckets(query=None):
 
     while start_index < total_files:
         #display total storage info on every page
-        check_all_storage() 
+        # check_all_storage() 
         #display paginated file results
         print("\nFiles (Sorted Alphabetically):\n")
         for idx, (name, file_id, mime_type, size) in enumerate(all_files[start_index:start_index+page_size], start=start_index+1):
@@ -196,7 +194,9 @@ def add_new_bucket():
 if __name__ == "__main__":
     print("Syncly Demo 1")
     while True:
-        
+        print("\n-------------Storage Details-------------")
+        check_all_storage()
+        print("-------------------------------------------")
         print("\nOptions:")
         print("1: View Files")
         print("2: Search Files")
@@ -213,7 +213,7 @@ if __name__ == "__main__":
         elif choice == "3":
             add_new_bucket()
         elif choice == "4":
-            input = input("Work in progess nigga, check back later ")
+            input = input("Work in progess nigga, check back ")
             #upload_to_drive();    
         elif choice == "5":
             print("Thank you for using Syncly's Demo 1!")
