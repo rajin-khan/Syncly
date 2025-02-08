@@ -281,6 +281,88 @@ def upload_file(file_path, file_name, mimetype):
         json.dump(metadata, meta_file, indent=4)
     print("Metadata written to metadata.json.")
 
+#Download a file from Google Drive
+def download_file(service, file_id, save_path):
+    try:
+        request = service.files().get_media(fileId=file_id)
+        file_metadata = service.files().get(fileId=file_id, fields="name").execute()
+        file_name = file_metadata.get("name")
+        save_file_path = os.path.join(save_path, file_name)
+        
+        #Download the file
+        with open(save_file_path, "wb") as file:
+            downloader = MediaIoBaseDownload(file, request)
+            done = False
+            while not done:
+                status, done = downloader.next_chunk()
+                print(f"Downloading... {int(status.progress() * 100)}% completed")
+        
+        print(f"Download complete: {save_file_path}")
+        return save_file_path
+    except Exception as e:
+        print(f"Error downloading file: {e}")
+        return None
+#Merge chunks into a single file
+def merge_chunks(file_paths, merged_file_path):
+    with open(merged_file_path, "wb") as merged_file:
+        for chunk_path in sorted(file_paths):
+            with open(chunk_path, "rb") as chunk:
+                merged_file.write(chunk.read())
+    print(f"Merged file saved at: {merged_file_path}")
+
+#Download and merge chunks into a single file
+def download_and_merge_chunks(service, file_name, save_path="downloads"):
+    os.makedirs(save_path, exist_ok=True)
+    
+    #Check if the full file exists first
+    query = f"name = '{file_name}'"
+    result = service.files().list(q=query, fields="files(id, name)").execute()
+    files = result.get("files", [])
+    
+    if files:
+        file_id = files[0]["id"]
+        print("File found, downloading directly.")
+        return download_file(service, file_id, save_path)
+    
+    #If full file not found, check for chunks
+    query = f"name contains '{file_name}.part'"
+    results = service.files().list(q=query, fields="files(id, name)").execute()
+    chunk_files = results.get("files", [])
+    
+    if not chunk_files:
+        print("File not found in Google Drive.")
+        return None
+    
+    chunk_paths = []
+    for file in sorted(chunk_files, key=lambda x: x['name']):
+        file_id = file['id']
+        chunk_path = download_file(service, file_id, save_path)
+        if chunk_path:
+            chunk_paths.append(chunk_path)
+    
+    merged_file_path = os.path.join(save_path, file_name)
+    merge_chunks(chunk_paths, merged_file_path)
+    return merged_file_path
+
+#Download a file from all buckets
+def download_from_all_buckets(file_name, save_path="downloads"):
+    os.makedirs(save_path, exist_ok=True)
+    bucket_numbers = get_all_authenticated_buckets()
+    if not bucket_numbers:
+        print("No authenticated buckets found. Please add a new bucket first.")
+        return
+    
+    for bucket in bucket_numbers:
+        try:
+            service = authenticate_account(bucket)
+            result = download_and_merge_chunks(service, file_name, save_path)
+            if result:
+                return result
+        except Exception as e:
+            print(f"Error downloading from bucket {bucket}: {e}")
+    
+    print("File not found in any bucket.")
+
 
 def search_files():
     query = input("\nEnter a keyword to search for files across all buckets: ").strip()
@@ -306,7 +388,8 @@ if __name__ == "__main__":
         print("2: Search Files")
         print("3: Add New Bucket")
         print("4: Upload File")
-        print("5: Exit")
+        print("5: Downlaod File")
+        print("6: Exit")
 
         choice = input("Choose an option (Enter a number): ")
 
@@ -320,6 +403,10 @@ if __name__ == "__main__":
             file_path = input("Enter file path: ").strip()
             upload_file(file_path, file_name=os.path.basename(file_path), mimetype="application/octet-stream")
         elif choice == "5":
+            file_path = input("Enter file name to download: ").strip()
+            save_path = input("Enter save path (default: downloads): ").strip()
+            download_from_all_buckets(file_path, save_path)
+        elif choice == "6":
             print("Thank you for using Syncly's Demo 1!")
             break
         else:
