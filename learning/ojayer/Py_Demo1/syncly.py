@@ -109,12 +109,6 @@ def list_files_from_all_buckets(query=None):
             if more != 'y':
                 break
 
-def upload_chunk(service, bucket_id, chunk_path, mimetype, file_name, chunk_index):
-    media = MediaFileUpload(chunk_path, mimetype=mimetype, resumable=True)
-    file_metadata = {'name': f'{file_name}_part{chunk_index + 1}'}
-    result = service.files().create(media_body=media, body=file_metadata).execute()
-    return result.get("id")
-
 def upload_chunk(service, chunk_path, mimetype, file_name, chunk_index):
     media = MediaFileUpload(chunk_path, mimetype=mimetype, resumable=True)
     file_metadata = {'name': f'{file_name}_part{chunk_index + 1}'}
