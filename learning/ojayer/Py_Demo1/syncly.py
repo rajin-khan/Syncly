@@ -1,8 +1,9 @@
 import os
 import io
+import json
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.http import MediaIoBaseUpload
+from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 from google.oauth2.credentials import Credentials
 from dotenv import load_dotenv
 
@@ -15,6 +16,7 @@ SCOPES = ['https://www.googleapis.com/auth/drive']
 #get paths from env
 TOKEN_DIR = os.getenv("TOKEN_DIR", "tokens")  #default to "tokens" if not set
 CREDENTIALS_FILE = os.getenv("CREDENTIALS_FILE", "credentials.json")  #default to "credentials.json" if not set
+METADATA_FILE = "metadata.json"
 os.makedirs(TOKEN_DIR, exist_ok=True)  #ensure token dir exists
 
 def authenticate_account(bucket_number):
@@ -177,6 +179,124 @@ def list_files_from_all_buckets(query=None):
             if more != 'y':
                 break
 
+# Split file into chunks and update metadata
+def split_file(file_path, chunk_size):
+    file_size = os.path.getsize(file_path)
+    chunk_paths = []
+    metadata = {"file_name": os.path.basename(file_path), "chunks": []}
+    
+    with open(file_path, "rb") as file:
+        chunk_index = 0
+        while file_size > 0:
+            chunk_filename = f"{file_path}.part{chunk_index}"
+            with open(chunk_filename, "wb") as chunk_file:
+                chunk = file.read(min(chunk_size, file_size))
+                chunk_file.write(chunk)
+            chunk_paths.append(chunk_filename)
+            metadata["chunks"].append({"chunk_index": chunk_index, "chunk_path": chunk_filename})
+            file_size -= len(chunk)
+            chunk_index += 1
+    
+    with open(METADATA_FILE, "w") as meta_file:
+        json.dump(metadata, meta_file)
+    print("File split complete. Metadata updated.")
+    
+    return chunk_paths
+
+# Upload a single chunk
+def upload_chunk(service, chunk_path, mimetype, file_name, chunk_index):
+    media = MediaFileUpload(chunk_path, mimetype=mimetype, resumable=True)
+    file_metadata = {'name': f'{file_name}_part{chunk_index + 1}'}
+    file = service.files().create(media_body=media, body=file_metadata).execute()
+    print(f'Uploaded chunk {chunk_index + 1} of {file_name} to Google Drive.')
+    return file['id']
+
+# Upload file and save metadata
+def upload_file(file_path, file_name, mimetype):
+    file_size = os.path.getsize(file_path)
+    buckets = get_all_authenticated_buckets()
+    free_space = []
+    
+    # Initialize free space for each bucket
+    for bucket in buckets:
+        service = authenticate_account(bucket)
+        limit, used = check_storage(service,bucket)
+        free = limit - used
+        if free > 0:
+            free_space.append((free, bucket))
+    
+    free_space.sort(reverse=True, key=lambda x: x[0])
+    remaining_size = file_size
+    metadata = {"file_name": file_name, "chunks": []}
+    chunk_index = 0
+    
+    while remaining_size > 0:
+        if not free_space:
+            print("No available buckets with free space.")
+            return
+
+        # Get the largest available bucket
+        largest_free, best_bucket = free_space[0]
+        if largest_free <= 0:
+            print("No more space in any bucket.")
+            return
+
+        # Determine chunk size (smallest of remaining size and largest_free)
+        chunk_size = min(largest_free, remaining_size)
+        
+        # Split the file into a single chunk of chunk_size
+        chunk_path = f"{file_path}.part{chunk_index}"
+        with open(file_path, "rb") as file:
+            file.seek(file_size - remaining_size)
+            chunk_data = file.read(chunk_size)
+            with open(chunk_path, "wb") as chunk_file:
+                chunk_file.write(chunk_data)
+        
+        # Upload the chunk to the best bucket
+        service = authenticate_account(best_bucket)
+        media = MediaFileUpload(chunk_path, mimetype=mimetype)
+        chunk_name = f"{file_name}_part{chunk_index}"
+        file_metadata = {'name': chunk_name}
+        uploaded_file = service.files().create(body=file_metadata, media_body=media).execute()
+        file_id = uploaded_file['id']
+        
+        # Update metadata
+        metadata["chunks"].append({
+            "bucket": best_bucket,
+            "file_id": file_id,
+            "chunk_index": chunk_index
+        })
+        
+        # Update remaining size
+        remaining_size -= chunk_size
+        chunk_index += 1
+        
+        # Update free_space: subtract chunk_size from the used bucket
+        new_free = largest_free - chunk_size
+        # Remove the current bucket from free_space and reinsert with new_free
+        free_space.pop(0)
+        if new_free > 0:
+            # Insert the updated bucket back into the list
+            inserted = False
+            for i, (free, bucket) in enumerate(free_space):
+                if new_free >= free:
+                    free_space.insert(i, (new_free, best_bucket))
+                    inserted = True
+                    break
+            if not inserted:
+                free_space.append((new_free, best_bucket))
+        
+        # Clean up the chunk file
+        #os.remove(chunk_path)
+    
+    # Save metadata after all chunks are uploaded
+    with open(METADATA_FILE, "w") as meta_file:
+        json.dump(metadata, meta_file)
+    print("Upload complete. Metadata saved.")
+
+
+
+
 
 def search_files():
     query = input("\nEnter a keyword to search for files across all buckets: ").strip()
@@ -213,10 +333,11 @@ if __name__ == "__main__":
         elif choice == "3":
             add_new_bucket()
         elif choice == "4":
-            input = input("Work in progess nigga, check back ")
-            #upload_to_drive();    
+            file_path = input("Enter file path: ").strip()
+            upload_file(file_path, file_name=os.path.basename(file_path), mimetype="application/octet-stream")
         elif choice == "5":
             print("Thank you for using Syncly's Demo 1!")
             break
         else:
             print("Invalid option. Please try again.")
+
