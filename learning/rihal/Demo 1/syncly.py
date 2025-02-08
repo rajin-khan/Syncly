@@ -268,26 +268,32 @@ def upload_file(file_path, file_name, mimetype):
         print("Upload complete. Metadata updated.")
 
 
-#Download file from Google Drive
+#List of common file extensions to check
+COMMON_EXTENSIONS = ['.jpg', '.pdf', '.png', '.txt', '.csv', '.docx', '.xlsx']
+
+#Download a file from Google Drive
 def download_file(service, file_id, save_path):
     try:
         request = service.files().get_media(fileId=file_id)
         file_metadata = service.files().get(fileId=file_id, fields="name").execute()
-        file_name = file_metadata.get("name")
+        file_name = file_metadata.get("name")  # Preserve the original file name with extension
         save_file_path = os.path.join(save_path, file_name)
+        
+        #Download the file
         with open(save_file_path, "wb") as file:
             downloader = MediaIoBaseDownload(file, request)
             done = False
             while not done:
                 status, done = downloader.next_chunk()
-                print(f"Downloading... {int(status.progress() * 100)}%")
+                print(f"Downloading... {int(status.progress() * 100)}% completed")
+        
+        print(f"Download complete: {save_file_path}")
         return save_file_path
     except Exception as e:
-        print(f"Download error: {e}")
+        print(f"Error downloading file: {e}")
         return None
 
-
-#Merge chunks to recreate original file
+#Merge chunks into a single file
 def merge_chunks(file_paths, merged_file_path):
     with open(merged_file_path, "wb") as merged_file:
         for chunk_path in sorted(file_paths):
@@ -295,84 +301,71 @@ def merge_chunks(file_paths, merged_file_path):
                 merged_file.write(chunk.read())
     print(f"Merged file saved at: {merged_file_path}")
 
-
-#Download file using metadata
-def download_using_metadata(file_name, save_path):
-    if not os.path.exists(METADATA_FILE):
-        print("Metadata not found.")
-        return
-    with open(METADATA_FILE, 'r') as f:
-        metadata_list = json.load(f)
-    target_metadata = None
-    for md in metadata_list:
-        if md['file_name'] == file_name:
-            target_metadata = md
-            break
-    if not target_metadata:
-        print("File not found in metadata.")
-        return
-    chunks = target_metadata['chunks']
-    if len(chunks) == 1 and chunks[0]['chunk_name'] == file_name:
-        chunk = chunks[0]
-        service = authenticate_account(chunk['bucket'])
-        download_file(service, chunk['file_id'], save_path)
-        return
+#Download and merge chunks into a single file
+def download_and_merge_chunks(service, file_name, save_path="downloads"):
+    os.makedirs(save_path, exist_ok=True)
+    
+    #Check if the full file exists first
+    query = f"name contains '{file_name}' and not name contains '.part'"
+    result = service.files().list(q=query, fields="files(id, name)").execute()
+    files = result.get("files", [])
+    
+    if files:
+        file_id = files[0]["id"]
+        print("File found, downloading directly.")
+        return download_file(service, file_id, save_path)
+    
+    #If full file not found, check for chunks
+    query = f"name contains '{file_name}.part'"
+    results = service.files().list(q=query, fields="files(id, name)").execute()
+    chunk_files = results.get("files", [])
+    
+    if not chunk_files:
+        print("File not found in Google Drive.")
+        return None
+    
     chunk_paths = []
-    for chunk in chunks:
-        service = authenticate_account(chunk['bucket'])
-        downloaded_path = download_file(service, chunk['file_id'], save_path)
-        if downloaded_path:
-            chunk_paths.append(downloaded_path)
-        else:
-            print("Failed to download chunk.")
-            return
-    merged_path = os.path.join(save_path, file_name)
-    merge_chunks(sorted(chunk_paths), merged_path)
-    for path in chunk_paths:
-        os.remove(path)
-    print(f"File downloaded: {merged_path}")
+    for file in sorted(chunk_files, key=lambda x: x['name']):
+        file_id = file['id']
+        chunk_path = download_file(service, file_id, save_path)
+        if chunk_path:
+            chunk_paths.append(chunk_path)
+    
+    merged_file_path = os.path.join(save_path, file_name)
+    merge_chunks(chunk_paths, merged_file_path)
+    return merged_file_path
 
-
-#Download file from all buckets
+#Download a file from all buckets
 def download_from_all_buckets(file_name, save_path="downloads"):
     os.makedirs(save_path, exist_ok=True)
-    if os.path.exists(METADATA_FILE):
-        with open(METADATA_FILE, 'r') as f:
+    bucket_numbers = get_all_authenticated_buckets()
+    if not bucket_numbers:
+        print("No authenticated buckets found. Please add a new bucket first.")
+        return
+    
+    #Check if the full file exists in any bucket
+    for bucket in bucket_numbers:
+        try:
+            service = authenticate_account(bucket)
+            result = download_and_merge_chunks(service, file_name, save_path)
+            if result:
+                return result
+        except Exception as e:
+            print(f"Error downloading from bucket {bucket}: {e}")
+    
+    #If the exact file name is not found, try with common extensions
+    for ext in COMMON_EXTENSIONS:
+        full_file_name = f"{file_name}{ext}"
+        for bucket in bucket_numbers:
             try:
-                metadata_list = json.load(f)
-                for md in metadata_list:
-                    if md['file_name'] == file_name:
-                        print("Found in metadata. Downloading...")
-                        download_using_metadata(file_name, save_path)
-                        return
-            except json.JSONDecodeError:
-                print("Corrupted metadata.")
-    print("Searching all buckets...")
-    buckets = get_all_authenticated_buckets()
-    for bucket in buckets:
-        service = authenticate_account(bucket)
-        query = f"name = '{file_name}'"
-        result = service.files().list(q=query).execute()
-        files = result.get('files', [])
-        if files:
-            download_file(service, files[0]['id'], save_path)
-            return
-        query = f"name contains '{file_name}_part'"
-        result = service.files().list(q=query).execute()
-        parts = result.get('files', [])
-        if parts:
-            chunk_paths = []
-            for part in sorted(parts, key=lambda x: x['name']):
-                downloaded = download_file(service, part['id'], save_path)
-                if downloaded:
-                    chunk_paths.append(downloaded)
-            if chunk_paths:
-                merged_path = os.path.join(save_path, file_name)
-                merge_chunks(chunk_paths, merged_path)
-                for path in chunk_paths:
-                    os.remove(path)
-                return
-    print("File not found.")
+                service = authenticate_account(bucket)
+                result = download_and_merge_chunks(service, full_file_name, save_path)
+                if result:
+                    return result
+            except Exception as e:
+                print(f"Error downloading from bucket {bucket}: {e}")
+    
+    print("File not found in any bucket.")
 
 def search_files():
     query = input("Enter search keyword: ").strip()
