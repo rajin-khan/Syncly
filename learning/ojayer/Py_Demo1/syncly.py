@@ -179,123 +179,107 @@ def list_files_from_all_buckets(query=None):
             if more != 'y':
                 break
 
-# Split file into chunks and update metadata
-def split_file(file_path, chunk_size):
-    file_size = os.path.getsize(file_path)
-    chunk_paths = []
-    metadata = {"file_name": os.path.basename(file_path), "chunks": []}
-    
-    with open(file_path, "rb") as file:
-        chunk_index = 0
-        while file_size > 0:
-            chunk_filename = f"{file_path}.part{chunk_index}"
-            with open(chunk_filename, "wb") as chunk_file:
-                chunk = file.read(min(chunk_size, file_size))
-                chunk_file.write(chunk)
-            chunk_paths.append(chunk_filename)
-            metadata["chunks"].append({"chunk_index": chunk_index, "chunk_path": chunk_filename})
-            file_size -= len(chunk)
-            chunk_index += 1
-    
-    with open(METADATA_FILE, "w") as meta_file:
-        json.dump(metadata, meta_file)
-    print("File split complete. Metadata updated.")
-    
-    return chunk_paths
 
-# Upload a single chunk
-def upload_chunk(service, chunk_path, mimetype, file_name, chunk_index):
+
+def upload_chunk(service, bucket_id, chunk_path, mimetype, file_name, chunk_index):
+    """Upload a single chunk to Google Drive and return its file ID."""
     media = MediaFileUpload(chunk_path, mimetype=mimetype, resumable=True)
     file_metadata = {'name': f'{file_name}_part{chunk_index + 1}'}
-    file = service.files().create(media_body=media, body=file_metadata).execute()
-    print(f'Uploaded chunk {chunk_index + 1} of {file_name} to Google Drive.')
-    return file['id']
+    result = service.files().create(media_body=media, body=file_metadata).execute()
+    file_id = result.get("id")
+    print(f'Uploaded chunk {chunk_index + 1} of {file_name} to bucket {bucket_id}. File ID: {file_id}')
+    return file_id
 
-# Upload file and save metadata
 def upload_file(file_path, file_name, mimetype):
+    """
+    Upload the file to Google Drive, splitting it across buckets if necessary.
+    Also writes metadata (filename, fileid, bucket) to metadata.json to track when
+    and where each part was uploaded.
+    """
+    print("Entered upload function")
     file_size = os.path.getsize(file_path)
-    buckets = get_all_authenticated_buckets()
-    free_space = []
-    
-    # Initialize free space for each bucket
+    buckets = get_all_authenticated_buckets()  # Replace with your actual function.
+    free_space = []  # List of [free_bytes, bucket_identifier]
+    print(f"File size = {file_size} bytes")
+    total_free = 0
+    # Check available storage on each bucket.
     for bucket in buckets:
-        service = authenticate_account(bucket)
-        limit, used = check_storage(service,bucket)
-        free = limit - used
+        service = authenticate_account(bucket)  # Replace with your authentication function.
+        total, used = check_storage(service,bucket)  # Replace with your storage-checking function.
+        free = total - used
+        total_free = total_free+ free
         if free > 0:
-            free_space.append((free, bucket))
-    
+            free_space.append([free, bucket])
+    if(total_free<file_size):
+        print("Not Enough Space", free_space)
+        return
+    # Sort buckets so that the one with the most free space is first.
     free_space.sort(reverse=True, key=lambda x: x[0])
-    remaining_size = file_size
-    metadata = {"file_name": file_name, "chunks": []}
-    chunk_index = 0
-    
-    while remaining_size > 0:
-        if not free_space:
-            print("No available buckets with free space.")
-            return
+    print("Buckets and free space:", free_space)
 
-        # Get the largest available bucket
-        largest_free, best_bucket = free_space[0]
-        if largest_free <= 0:
-            print("No more space in any bucket.")
-            return
+    # This dictionary will hold the metadata.
+    metadata = {
+        "file_name": file_name,
+        "chunks": []  # Each element will include: chunk_name, file_id, bucket.
+    }
 
-        # Determine chunk size (smallest of remaining size and largest_free)
-        chunk_size = min(largest_free, remaining_size)
-        
-        # Split the file into a single chunk of chunk_size
-        chunk_path = f"{file_path}.part{chunk_index}"
-        with open(file_path, "rb") as file:
-            file.seek(file_size - remaining_size)
-            chunk_data = file.read(chunk_size)
-            with open(chunk_path, "wb") as chunk_file:
-                chunk_file.write(chunk_data)
-        
-        # Upload the chunk to the best bucket
+    # If the bucket with the most free space can hold the whole file, upload in one piece.
+    if free_space[0][0] >= file_size:
+        best_bucket = free_space[0][1]
+        print(f"Uploading the whole file to bucket {best_bucket}.")
         service = authenticate_account(best_bucket)
-        media = MediaFileUpload(chunk_path, mimetype=mimetype)
-        chunk_name = f"{file_name}_part{chunk_index}"
-        file_metadata = {'name': chunk_name}
-        uploaded_file = service.files().create(body=file_metadata, media_body=media).execute()
-        file_id = uploaded_file['id']
-        
-        # Update metadata
+        media = MediaFileUpload(file_path, mimetype=mimetype, resumable=True)
+        file_metadata = {'name': file_name}
+        result = service.files().create(media_body=media, body=file_metadata).execute()
+        file_id = result.get("id")
+        print(f"Uploaded the whole file to bucket {best_bucket}. File ID: {file_id}")
+
         metadata["chunks"].append({
-            "bucket": best_bucket,
+            "chunk_name": file_name,
             "file_id": file_id,
-            "chunk_index": chunk_index
+            "bucket": best_bucket
         })
-        
-        # Update remaining size
-        remaining_size -= chunk_size
-        chunk_index += 1
-        
-        # Update free_space: subtract chunk_size from the used bucket
-        new_free = largest_free - chunk_size
-        # Remove the current bucket from free_space and reinsert with new_free
-        free_space.pop(0)
-        if new_free > 0:
-            # Insert the updated bucket back into the list
-            inserted = False
-            for i, (free, bucket) in enumerate(free_space):
-                if new_free >= free:
-                    free_space.insert(i, (new_free, best_bucket))
-                    inserted = True
-                    break
-            if not inserted:
-                free_space.append((new_free, best_bucket))
-        
-        # Clean up the chunk file
-        #os.remove(chunk_path)
-    
-    # Save metadata after all chunks are uploaded
-    with open(METADATA_FILE, "w") as meta_file:
-        json.dump(metadata, meta_file)
-    print("Upload complete. Metadata saved.")
 
+        # Write the metadata to metadata.json.
+        with open("metadata.json", "w") as meta_file:
+            json.dump(metadata, meta_file, indent=4)
+        return
 
+    # Otherwise, perform chunked upload.
+    offset = 0
+    chunk_index = 0
 
+    with open(file_path, "rb") as file:
+        while offset < file_size:
+            # Always sort free_space so that the bucket with the most free space is first.
+            free_space.sort(reverse=True, key=lambda x: x[0])
+            bucket_free, bucket_id = free_space[0]
+            chunk_size = min(bucket_free, file_size - offset)
+            print(f"Uploading chunk {chunk_index + 1} of size {chunk_size} bytes to bucket {bucket_id}.")
+
+            # Read the next chunk_size bytes and write them to a temporary file.
+            chunk_filename = f"{file_path}.part{chunk_index}"
+            with open(chunk_filename, "wb") as chunk_file:
+                chunk_file.write(file.read(chunk_size))
+
+            service = authenticate_account(bucket_id)
+            file_id = upload_chunk(service, bucket_id, chunk_filename, mimetype, file_name, chunk_index)
+            metadata["chunks"].append({
+                "chunk_name": f"{file_name}_part{chunk_index + 1}",
+                "file_id": file_id,
+                "bucket": bucket_id
+            })
+
+            # Update the available free space for the bucket we just used.
+            free_space[0][0] -= chunk_size
+            offset += chunk_size
+            chunk_index += 1
+            print(f"Uploaded {offset} of {file_size} bytes.")
+
+    # Write the metadata file after all chunks have been uploaded.
+    with open("metadata.json", "w") as meta_file:
+        json.dump(metadata, meta_file, indent=4)
+    print("Metadata written to metadata.json.")
 
 
 def search_files():
