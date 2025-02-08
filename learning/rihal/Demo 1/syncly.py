@@ -19,6 +19,7 @@ CREDENTIALS_FILE = os.getenv("CREDENTIALS_FILE", "credentials.json")
 METADATA_FILE = "metadata.json"
 os.makedirs(TOKEN_DIR, exist_ok=True)
 
+#Authenticate Google Drive account
 def authenticate_account(bucket_number):
     token_path = os.path.join(TOKEN_DIR, f"bucket_{bucket_number}.json")
     if os.path.exists(token_path):
@@ -31,7 +32,7 @@ def authenticate_account(bucket_number):
         token_file.write(creds.to_json())
     return build("drive", "v3", credentials=creds)
 
-
+#List files from Google Drive
 def list_drive_files(service, max_results=None, query=None):
     all_files = []
     page_token = None
@@ -51,9 +52,9 @@ def list_drive_files(service, max_results=None, query=None):
             break
     return all_files
 
+#Check storage quota for a Google Drive account
 def get_all_authenticated_buckets():
     return [f.replace(".json", "").replace("bucket_", "") for f in os.listdir(TOKEN_DIR) if f.startswith("bucket_")]
-
 def check_storage(service, bucket):
     try:
         res = service.about().get(fields='storageQuota').execute()
@@ -63,7 +64,8 @@ def check_storage(service, bucket):
     except Exception as e:
         print(f"Error for {bucket}: {e}")
         return 0, 0
-
+    
+#Check storage quota for all buckets   
 def check_all_storage():
     total_storage = 0
     total_used = 0
@@ -80,12 +82,16 @@ def check_all_storage():
     print(f"Total Used: {round(total_used / (1024**3), 2)} GB")
     print(f"Total Free: {round((total_storage - total_used) / (1024**3), 2)} GB")
 
+
 #List files from all buckets
 def list_files_from_all_buckets(query=None):
     bucket_numbers = get_all_authenticated_buckets()
     if not bucket_numbers:
         print("No authenticated buckets found. Please add a new bucket first.")
         return
+
+    #Initialize max_files with a default value
+    max_files = 100  #Default to 100 files if no choice is made
 
     if query:
         print(f"\nSearching for files containing: '{query}' across all buckets...")
@@ -106,7 +112,7 @@ def list_files_from_all_buckets(query=None):
         elif choice == "3":
             max_files = 500
         elif choice == "4":
-            max_files = None  # Fetch all files
+            max_files = None  #Fetch all files
             print("\nFetching all available files....")
         else:
             print("Invalid choice. Defaulting to 100 files.")
@@ -117,13 +123,13 @@ def list_files_from_all_buckets(query=None):
     for bucket in bucket_numbers:
         try:
             service = authenticate_account(bucket)
-            files = list_drive_files(service, max_files, query)  # Retrieve user-defined limit or search query
+            files = list_drive_files(service, max_files, query)  #Retrieve user-defined limit or search query
             for file in files:
                 file_id = file['id']
                 file_name = file['name']
                 mime_type = file.get('mimeType', 'Unknown')
                 size = file.get('size', 'Unknown')
-                file_url = f"https://drive.google.com/file/d/{file_id}/view"  # Generate Google Drive file URL
+                file_url = f"https://drive.google.com/file/d/{file_id}/view"  #Generate Google Drive file URL
                 all_files.append((file_name, file_id, mime_type, size, file_url))
         except Exception as e:
             print(f"Error retrieving files or storage details for a bucket: {e}")
@@ -166,7 +172,6 @@ def upload_file(file_path, file_name, mimetype):
     buckets = get_all_authenticated_buckets()
     free_space = []
     total_free = 0
-
     for bucket in buckets:
         service = authenticate_account(bucket)
         total, used = check_storage(service, bucket)
@@ -174,16 +179,13 @@ def upload_file(file_path, file_name, mimetype):
         total_free += free
         if free > 0:
             free_space.append([free, bucket])
-
     if total_free < file_size:
         print("Not enough space.")
         return
-
     free_space.sort(reverse=True, key=lambda x: x[0])
     metadata = {"file_name": file_name, "chunks": []}
     best_bucket = free_space[0][1]
     service = authenticate_account(best_bucket)
-
     if free_space[0][0] >= file_size:
         media = MediaFileUpload(file_path, mimetype=mimetype, resumable=True)
         file_metadata = {'name': file_name}
@@ -198,7 +200,6 @@ def upload_file(file_path, file_name, mimetype):
                 #Sort and get the best available bucket
                 free_space.sort(reverse=False, key=lambda x: x[0])
                 print(free_space)
-
                 #Find a bucket with enough space
                 selected_bucket = None
                 for i, (bucket_free, bucket_id) in enumerate(free_space):
@@ -206,17 +207,13 @@ def upload_file(file_path, file_name, mimetype):
                         selected_bucket = bucket_id
                         selected_index = i
                         break
-
                 if not selected_bucket:
                     print("No available buckets with free space.")
                     break
-
                 chunk_size = min(free_space[selected_index][0], file_size - offset)
                 chunk_filename = f"{file_path}.part{chunk_index}"
-
                 with open(chunk_filename, "wb") as chunk_file:
                     chunk_file.write(file.read(chunk_size))
-
                 file_id = None
                 uploaded = False
                 while not uploaded:
@@ -232,22 +229,18 @@ def upload_file(file_path, file_name, mimetype):
                         else:
                             os.remove(chunk_filename)
                             raise e
-
                 if file_id is None:
                     raise RuntimeError("Failed to upload chunk after retries")
-
                 metadata["chunks"].append({
                     "chunk_name": f"{file_name}_part{chunk_index + 1}",
                     "file_id": file_id,
                     "bucket": selected_bucket
                 })
-
                 # Update remaining space after successful upload
                 free_space[selected_index][0] -= chunk_size
                 offset += chunk_size
                 chunk_index += 1
                 os.remove(chunk_filename)
-
     #Update metadata
     if os.path.exists(METADATA_FILE) and os.path.getsize(METADATA_FILE) > 0:
         with open(METADATA_FILE, 'r') as f:
@@ -260,9 +253,7 @@ def upload_file(file_path, file_name, mimetype):
                 existing_metadata = []
     else:
         existing_metadata = []
-
     existing_metadata.append(metadata)
-
     with open(METADATA_FILE, 'w') as f:
         json.dump(existing_metadata, f, indent=4)
         print("Upload complete. Metadata updated.")
@@ -293,6 +284,7 @@ def download_file(service, file_id, save_path):
         print(f"Error downloading file: {e}")
         return None
 
+
 #Merge chunks into a single file
 def merge_chunks(file_paths, merged_file_path):
     with open(merged_file_path, "wb") as merged_file:
@@ -300,6 +292,7 @@ def merge_chunks(file_paths, merged_file_path):
             with open(chunk_path, "rb") as chunk:
                 merged_file.write(chunk.read())
     print(f"Merged file saved at: {merged_file_path}")
+
 
 #Download and merge chunks into a single file
 def download_and_merge_chunks(service, file_name, save_path="downloads"):
@@ -335,6 +328,7 @@ def download_and_merge_chunks(service, file_name, save_path="downloads"):
     merge_chunks(chunk_paths, merged_file_path)
     return merged_file_path
 
+
 #Download a file from all buckets
 def download_from_all_buckets(file_name, save_path="downloads"):
     os.makedirs(save_path, exist_ok=True)
@@ -367,15 +361,16 @@ def download_from_all_buckets(file_name, save_path="downloads"):
     
     print("File not found in any bucket.")
 
+
 def search_files():
     query = input("Enter search keyword: ").strip()
     if query:
         list_files_from_all_buckets(query=query)
-
 def add_new_bucket():
     bucket_number = len(get_all_authenticated_buckets()) + 1
     authenticate_account(bucket_number)
     print(f"Bucket {bucket_number} added.")
+
 
 if __name__ == "__main__":
     print("Syncly Demo 1")
@@ -402,3 +397,4 @@ if __name__ == "__main__":
             break
         else:
             print("Invalid choice.")
+      
