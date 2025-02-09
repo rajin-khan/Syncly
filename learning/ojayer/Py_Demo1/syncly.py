@@ -133,7 +133,8 @@ def upload_file(file_path, file_name, mimetype):
         print("Not enough space.")
         return
 
-    free_space.sort(reverse=True, key=lambda x: x[0])
+    free_space.sort(reverse=False, key=lambda x: x[0])
+    print(free_space)
     metadata = {"file_name": file_name, "chunks": []}
     best_bucket = free_space[0][1]
     service = authenticate_account(best_bucket)
