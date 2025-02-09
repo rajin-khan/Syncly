@@ -416,7 +416,7 @@ if __name__ == "__main__":
             file_path = input("File path: ").strip()
             upload_file(file_path, os.path.basename(file_path), "application/octet-stream")
         elif choice == "5":
-            file_name = input("Enter file name to download (without extension): ").strip()
+            file_name = input("Enter file name to download (with extension): ").strip()
             save_path = input("Enter save path (default: downloads): ").strip()
             if not save_path:               #default save path
                 save_path = "downloads"
