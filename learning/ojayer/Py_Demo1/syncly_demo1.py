@@ -230,7 +230,7 @@ def upload_file(file_path, file_name, mimetype):
         with open(file_path, "rb") as file:
             while offset < file_size:
                 #Sort and get the best available bucket
-                free_space.sort(reverse=False, key=lambda x: x[0])
+                free_space.sort(reverse=True, key=lambda x: x[0])
                 print(free_space)
                 #Find a bucket with enough space
                 selected_bucket = None
