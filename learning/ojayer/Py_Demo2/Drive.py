@@ -13,17 +13,5 @@ class service(ABC):
         pass
 
     @abstractmethod
-    def upload_chunk(self, chunk_path:str, file_name: str, mimetype: str,chunk_index: int):
-        pass
-    
-    @abstractmethod
-    def upload_file(self, file_path:str, file_name: str, mimetype: str):
-        pass
-
-    @abstractmethod
-    def download_file(self, file_id: str, save_path: str):
-        pass
-
-    @abstractmethod
     def check_storage(self):
         pass
