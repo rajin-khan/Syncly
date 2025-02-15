@@ -2,9 +2,9 @@ import os
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
-from drive import drive
+from service import service
 
-class googleDrive(drive):
+class googleDrive(service):
     def __init__(self, token_dir = "tokens", credentials_file="credentials.json"):
         self.token_dir = token_dir
         self.credentials_file = credentials_file
