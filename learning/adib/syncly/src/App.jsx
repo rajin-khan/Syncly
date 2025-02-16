@@ -1,6 +1,7 @@
 import React from "react";
 import Header from "./components/Header";
 import PreviewCard from "./components/PreviewCard";
+import UploadBox from "./components/UploadBox";
 import "./styles.css";
 
 const App = () => {
@@ -12,6 +13,7 @@ const App = () => {
           <PreviewCard key={i} />
         ))}
       </div>
+      <UploadBox />
     </div>
   );
 };
