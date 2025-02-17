@@ -3,8 +3,8 @@ import requests
 import json
 
 # Azure app registration details
-CLIENT_ID = "2dfae117-e01c-40e4-a465-31dc1481e25f"
-TENANT_ID = "6c42c5f0-38a9-4ff6-950c-e3f506601d0b"
+CLIENT_ID = "real client_id"
+TENANT_ID = "real tenant_id"
 AUTHORITY = "https://login.microsoftonline.com/consumers"
 SCOPES = ["https://graph.microsoft.com/.default"]
 FILE_PATH = r"F:\CSE327\output.csv"
