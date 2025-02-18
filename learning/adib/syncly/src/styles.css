@@ -36,12 +36,22 @@ html, body {
     margin-bottom: 2rem;
 }
 
+.add-storage {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #777;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 14px;
+}
+
 .logo {
     color: black;
     font-size: 24px;
     font-weight: bold;
 }
-
 
 .search-icon {
     color: black;
@@ -109,6 +119,15 @@ html, body {
     padding: 2px;
 }
 
+/* Storage Info */
+.storage-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    margin-bottom: 1rem;
+}
+
 /* Upload Box */
 .upload-box {
     width: 90%;
@@ -125,3 +144,7 @@ html, body {
     text-align: center;
     cursor: pointer;
 }
+
+.storage-text {
+    color: black; /* Ensure storage info is visible */
+  }
