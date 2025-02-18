@@ -8,7 +8,7 @@
 
 #### **Split. Sync. Simplify.**
 
-**Syncly** is meant to be a powerful **Google Drive aggregator** designed to seamlessly **split**, **upload**, and **manage** large files across multiple Google Drive accounts. With **Syncly**, you will be able to store massive files effortlessly, search efficiently, and access your data from a unified interface.
+**Syncly** is meant to be a powerful **aggregator** designed to seamlessly **split**, **upload**, and **manage** large files across multiple accounts and services (Google Drive, OneDrive, DropBox). With **Syncly**, you will be able to store massive files effortlessly, search efficiently, and access your data from a unified interface.
 
 ---
 
