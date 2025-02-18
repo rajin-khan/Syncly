@@ -16,7 +16,7 @@
 
 **File Splitting & Uploading:**
 
-A. Automatically splits large files and uploads them across multiple Google Drive accounts.
+A. Automatically splits large files and uploads them across multiple accounts and services.
 
 B. Secure and efficient storage distribution.
 
