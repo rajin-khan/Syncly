@@ -5,31 +5,36 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from service import service
 
 class googleDrive(service):
-    def __init__(self, token_dir = "tokens", credentials_file="credentials.json"):
+    def __init__(self, token_dir="tokens", credentials_file="credentials.json"):
         self.token_dir = token_dir
         self.credentials_file = credentials_file
         self.scopes = ['https://www.googleapis.com/auth/drive']
+        self.service = None  # Store the authenticated service instance
         os.makedirs(self.token_dir, exist_ok=True)
 
-    
-    def authenticate(self,bucket_number):
+    def authenticate(self, bucket_number):
         token_path = os.path.join(self.token_dir, f"bucket_{bucket_number}.json")
         if os.path.exists(token_path):
             creds = Credentials.from_authorized_user_file(token_path, self.scopes)
             if creds.valid:
-                return build("drive", "v3", credentials=creds)
+                self.service = build("drive", "v3", credentials=creds)
+                return
         flow = InstalledAppFlow.from_client_secrets_file(self.credentials_file, self.scopes)
         creds = flow.run_local_server(port=0)
         with open(token_path, "w") as token_file:
             token_file.write(creds.to_json())
-        return build("drive", "v3", credentials=creds)
-    
-    def list_drive_files(service, max_results=None, query=None):
+        self.service = build("drive", "v3", credentials=creds)
+
+    def list_drive_files(self, max_results=None, query=None):
+        if not self.service:
+            raise ValueError("Service not authenticated. Call authenticate() first.")
+        
         all_files = []
         page_token = None
         query_filter = f"name contains '{query}'" if query else None
+
         while True:
-            results = service.files().list(
+            results = self.service.files().list(
                 pageSize=100,
                 fields="nextPageToken, files(id, name, mimeType, size)",
                 pageToken=page_token,
@@ -42,16 +47,17 @@ class googleDrive(service):
             if not page_token:
                 break
         return all_files
-    
-    def check_storage(self,bucket):
+
+    def check_storage(self):
         if not self.service:
             raise ValueError("Service not authenticated. Call authenticate() first.")
         
         try:
-            res = self.about().get(fields='storageQuota').execute()
+            res = self.service.about().get(fields='storageQuota').execute()
             limit = int(res['storageQuota']['limit'])
             usage = int(res['storageQuota']['usage'])
             return limit, usage
         except Exception as e:
-            print(f"Error for {bucket}: {e}")
+            print(f"Error: {e}")
             return 0, 0
+
