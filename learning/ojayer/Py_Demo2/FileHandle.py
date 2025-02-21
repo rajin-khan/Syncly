@@ -12,11 +12,11 @@ class FileHandler(ABC):
         pass
 
     @abstractmethod
-    def split_and_upload_file(file_path:str, file_name:str, mimetype:str, file_size:str, free_space:str, metadata:str):
+    def split_and_upload_file(self,file_path:str, file_name:str, mimetype:str, file_size:str, free_space:str, metadata:str):
         pass
 
     @abstractmethod
-    def update_metadata(metadata:str):
+    def update_metadata(self,metadata:str):
         pass
     
     @abstractmethod
