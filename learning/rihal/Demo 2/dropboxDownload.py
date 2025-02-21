@@ -2,7 +2,7 @@ import dropbox
 import os
 
 #Replace with your Dropbox access token
-ACCESS_TOKEN = 'your_access_token_here'
+ACCESS_TOKEN = 'Insert_your_access_token_here'.strip()
 
 #Downloading a file from Dropbox
 def search_and_download_file(file_name):
