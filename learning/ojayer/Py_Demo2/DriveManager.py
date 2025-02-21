@@ -14,11 +14,15 @@ class DriveManager:
         self.drives.append(drive)
     #Checks storage usage for all drives.
     def check_all_storages(self):
+        self.sorted_buckets = []
         storage_info = []
         total_limit = 0
         total_usage = 0
         for index, drive in enumerate(self.drives):
             limit, usage = drive.check_storage()
+            free = limit-usage
+            if(free>0):
+                self.sorted_buckets.append((free,self.drives))
             total_limit+=limit
             total_usage+=usage
             storage_info.append({
@@ -28,7 +32,20 @@ class DriveManager:
                 "Free Storage": (limit - usage)/1024**3,
                 "Provider": type(drive).__name__
             })
+        self.sorted_buckets.sort(reverse=True,key=lambda x:x[0])
         return storage_info, total_limit, total_usage
+    def get_sorted_buckets(self):
+        """
+        Return the sorted list of buckets with the most free space.
+        """
+        return self.sorted_buckets
+
+    def update_sorted_buckets(self):
+        """
+        Update the sorted list of buckets based on current storage status.
+        """
+        self.check_all_storages()
+
     #Retrieves all authenticated bucket numbers from stored tokens.
     def get_all_authenticated_buckets(self):
         return [
