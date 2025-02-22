@@ -4,16 +4,23 @@ import dropbox
 import requests
 from dropbox.exceptions import AuthError, ApiError
 from dropbox.files import WriteMode
+from service import service
 
 # Constants
 METADATA_FILE = "metadata.json"
-TOKEN_FILE = "token.json"  # File to store access and refresh tokens
 
 # Dropbox OAuth2 endpoints
 DROPBOX_OAUTH2_TOKEN_URL = "https://api.dropbox.com/oauth2/token"
 
-class DropboxService:
+class DropboxService(service):
     def __init__(self, token_dir="tokens", app_key=None, app_secret=None, use_pkce=True):
+        """
+        Initialize the DropboxService.
+        :param token_dir: Directory to store token files.
+        :param app_key: Dropbox app key.
+        :param app_secret: Dropbox app secret.
+        :param use_pkce: Use PKCE if no secret.
+        """
         self.token_dir = token_dir
         self.app_key = app_key or os.getenv("DROPBOX_APP_KEY")
         self.app_secret = app_secret or os.getenv("DROPBOX_APP_SECRET")  # May be None
@@ -22,13 +29,22 @@ class DropboxService:
         self.bucket_number = None  # Bucket number for this drive
         os.makedirs(self.token_dir, exist_ok=True)
 
+    def get_token_file(self, bucket_number):
+        """
+        Get the token file path for a specific bucket.
+        :param bucket_number: The bucket number for this drive.
+        :return: Path to the token file.
+        """
+        return os.path.join(self.token_dir, f"bucket_{bucket_number}.json")
+
     def authenticate(self, bucket_number):
         """
         Authenticate with Dropbox using OAuth2.
         :param bucket_number: The bucket number for this drive.
         """
         self.bucket_number = bucket_number
-        tokens = self.load_tokens()
+        token_file = self.get_token_file(bucket_number)
+        tokens = self.load_tokens(token_file)
         refresh_token = tokens.get("refresh_token") if tokens else None
 
         if refresh_token:
@@ -70,7 +86,7 @@ class DropboxService:
                 return None
 
         # Save the new tokens
-        with open(TOKEN_FILE, "w") as f:
+        with open(token_file, "w") as f:
             json.dump({"access_token": access_token, "refresh_token": refresh_token}, f)
 
         self.client = dropbox.Dropbox(access_token)
@@ -91,47 +107,24 @@ class DropboxService:
             print(f"Unexpected error: {e}")
             return 0, 0
 
-    def load_tokens(self):
-        """Load tokens from the token file."""
-        if os.path.exists(TOKEN_FILE):
-            with open(TOKEN_FILE, "r") as f:
+    def load_tokens(self, token_file):
+        """
+        Load tokens from the token file.
+        :param token_file: Path to the token file.
+        :return: Tokens as a dictionary, or None if the file is missing or corrupted.
+        """
+        if os.path.exists(token_file):
+            with open(token_file, "r") as f:
                 try:
                     tokens = json.load(f)
                     return tokens
                 except json.JSONDecodeError:
-                    print("Error: token.json is corrupted. Deleting and re-authenticating.")
-                    os.remove(TOKEN_FILE)
+                    print(f"Error: {token_file} is corrupted. Deleting and re-authenticating.")
+                    os.remove(token_file)
                     return None
         return None
-    def list_drive_files(self, max_results=None, query=None):
-        """List files in Dropbox with optional search query."""
-        if not self.client:
-            raise ValueError("Service not authenticated. Call authenticate() first.")
-
-        files = []
-        try:
-            result = self.client.files_list_folder(path="", recursive=True)
-            while True:
-                for entry in result.entries:
-                    if isinstance(entry, dropbox.files.FileMetadata):
-                        if query and query.lower() not in entry.name.lower():
-                            continue
-                        files.append({
-                            'id': entry.id,
-                            'name': entry.name,
-                            'mimeType': None,  # Dropbox doesn't provide MIME type directly
-                            'size': entry.size,
-                            'path': entry.path_display
-                        })
-                if not result.has_more or (max_results and len(files) >= max_results):
-                    break
-                result = self.client.files_list_folder_continue(result.cursor)
-        except ApiError as e:
-            print(f"Dropbox API error: {e}")
-        except Exception as e:
-            print(f"Unexpected error: {e}")
-
-        return files[:max_results] if max_results else files
+    def list_drive_files(self, max_results = None, query = None):
+        return super().list_drive_files(max_results, query)
 
     """Use these functions later"""
     # def get_file_url(self, file_path):
