@@ -1,6 +1,5 @@
 import json
 import os
-import googleapiclient
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
@@ -25,7 +24,7 @@ METADATA_FILE = "metadata.json"
 os.makedirs(TOKEN_DIR, exist_ok=True)
 
 #List of common file extensions to check
-COMMON_EXTENSIONS = ['.jpg', '.pdf', '.png', '.txt', '.csv', '.docx', '.xlsx']
+COMMON_EXTENSIONS = ['.jpg', '.pdf', '.png', '.txt', '.csv', '.docx', '.xlsx', '.java', '.py']
 
 class GoogleDriveFile(FileHandler):
     def __init__(self, drive_manager: DriveManager):
@@ -83,17 +82,13 @@ class GoogleDriveFile(FileHandler):
             
             media = MediaFileUpload(file_path, mimetype=mimetype, resumable=True)
             file_metadata = {'name': file_name}
-            try:
-                result = service.files().create(media_body=media, body=file_metadata).execute()
-                file_id = result.get("id")
-                metadata["chunks"].append({
-                    "chunk_name": file_name,
-                    "file_id": file_id,
-                    "bucket": best_bucket
-                })
-            except HttpError as e:
-                print(f"Error uploading file to bucket {best_bucket}: {e}")
-                return
+            result = service.files().create(media_body=media, body=file_metadata).execute()
+            file_id = result.get("id")
+            metadata["chunks"].append({
+                "chunk_name": file_name,
+                "file_id": file_id,
+                "bucket": best_bucket
+            })
         else:
             #Split the file into chunks and upload to multiple buckets
             offset = 0
@@ -196,17 +191,16 @@ class GoogleDriveFile(FileHandler):
         with open(metadata_file, 'w') as f:
             json.dump(existing_metadata, f, indent=4)
             print("Upload complete. Metadata updated.")
-
+            
     def download_file(self, service, file_id: str, save_path: str):
-        #Download a file from Google Drive.
-        service = self.google_drive.authenticate(1)         #Authenticate with bucket number 1
+        """Download a file from Google Drive."""
         try:
             request = service.files().get_media(fileId=file_id)
             file_metadata = service.files().get(fileId=file_id, fields="name").execute()
-            file_name = file_metadata.get("name")       #Preserve the original file name with extension
+            file_name = file_metadata.get("name")  # Preserve the original file name with extension
             save_file_path = os.path.join(save_path, file_name)
             
-            #Download the file
+            # Download the file
             with open(save_file_path, "wb") as file:
                 downloader = MediaIoBaseDownload(file, request)
                 done = False
@@ -219,12 +213,6 @@ class GoogleDriveFile(FileHandler):
         except Exception as e:
             print(f"Error downloading file: {e}")
             return None
-
-    def search_file(self):
-        """Search for files in Google Drive."""
-        query = input("Enter search keyword: ").strip()
-        if query:
-            self.drive_manager.list_files_from_all_buckets(query=query)
 
     def merge_chunks(self, file_paths: str, merged_file_path: str):
         """Merge file chunks into a single file."""
@@ -252,10 +240,6 @@ class GoogleDriveFile(FileHandler):
         query = f"name contains '{file_name}.part'"
         results = service.files().list(q=query, fields="files(id, name)").execute()
         chunk_files = results.get("files", [])
-        if not chunk_files:
-            print(f"File not found in this bucket.")
-            print(f"\nChecking another bucket...")
-            return None
         
         #Sort chunks numerically by part number
         chunk_files.sort(key=lambda x: int(re.search(r'\.part(\d+)$', x['name']).group(1)))
@@ -281,11 +265,11 @@ class GoogleDriveFile(FileHandler):
         return merged_file_path
 
     def download_from_all_buckets(self, file_name: str, save_path: str = "downloads"):
-        #Download a file from all buckets.
-        #Remove quotation marks from the save path (if any)
+        """Download a file from all buckets."""
+        # Remove quotation marks from the save path (if any)
         save_path = save_path.strip('"').strip("'")
         
-        #Create the save directory if it doesn't exist
+        # Create the save directory if it doesn't exist
         os.makedirs(save_path, exist_ok=True)
         
         bucket_numbers = self.drive_manager.get_all_authenticated_buckets()
@@ -293,26 +277,64 @@ class GoogleDriveFile(FileHandler):
             print("No authenticated buckets found. Please add a new bucket first.")
             return
         
-        #Check if the full file exists in any bucket
+        # Check if the full file exists in any bucket
         for bucket in bucket_numbers:
             try:
+                print(f"Authenticating bucket {bucket}...")
                 service = self.google_drive.authenticate(int(bucket))
-                result = self.download_and_merge_chunks(service, file_name, save_path)
-                if result:
-                    return result
+                if service is None:
+                    print(f"Failed to authenticate bucket {bucket}.")
+                    continue
+                
+                # Search for the file in the current bucket
+                query = f"name contains '{file_name}' and not name contains '.part'"
+                result = service.files().list(q=query, fields="files(id, name)").execute()
+                files = result.get("files", [])
+                
+                if files:
+                    file_id = files[0]["id"]
+                    print(f"Downloading file from bucket {bucket}...")
+                    downloaded_file = self.download_file(service, file_id, save_path)
+                    if downloaded_file:
+                        print(f"Download complete: {downloaded_file}")
+                        return downloaded_file
+                else:
+                    print(f"File not found in bucket {bucket}.")
             except Exception as e:
                 print(f"Error downloading from bucket {bucket}: {e}")
         
-        #If the exact file name is not found, try with common extensions
+        # If the exact file name is not found, try with common extensions
         for ext in COMMON_EXTENSIONS:
             full_file_name = f"{file_name}{ext}"
             for bucket in bucket_numbers:
                 try:
+                    print(f"Authenticating bucket {bucket} for file {full_file_name}...")
                     service = self.google_drive.authenticate(int(bucket))
-                    result = self.download_and_merge_chunks(service, full_file_name, save_path)
-                    if result:
-                        return result
+                    if service is None:
+                        print(f"Failed to authenticate bucket {bucket}.")
+                        continue
+                    
+                    # Search for the file in the current bucket
+                    query = f"name contains '{full_file_name}' and not name contains '.part'"
+                    result = service.files().list(q=query, fields="files(id, name)").execute()
+                    files = result.get("files", [])
+                    
+                    if files:
+                        file_id = files[0]["id"]
+                        print(f"Downloading file from bucket {bucket}...")
+                        downloaded_file = self.download_file(service, file_id, save_path)
+                        if downloaded_file:
+                            print(f"Download complete: {downloaded_file}")
+                            return downloaded_file
+                    else:
+                        print(f"File not found in bucket {bucket}.")
                 except Exception as e:
                     print(f"Error downloading from bucket {bucket}: {e}")
         
         print("File not found in any bucket.")
+
+    def search_file(self):
+        """Search for files in Google Drive."""
+        query = input("Enter search keyword: ").strip()
+        if query:
+            self.drive_manager.list_files_from_all_buckets(query=query)

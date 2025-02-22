@@ -16,28 +16,52 @@ class DriveManager:
         drive.authenticate(bucket_number) #we can remove this and make individual service accounts
         self.drives.append(drive)
         
-    #Checks storage usage for all drives.
-    def check_all_storages(self):
-        self.sorted_buckets = []
-        storage_info = []
-        total_limit = 0
-        total_usage = 0
-        for index, drive in enumerate(self.drives):
+    # #Checks storage usage for all drives.
+    # def check_all_storages(self):
+    #     self.sorted_buckets = []
+    #     storage_info = []
+    #     total_limit = 0
+    #     total_usage = 0
+    #     for index, drive in enumerate(self.drives):
+    #         limit, usage = drive.check_storage()
+    #         free = limit-usage
+    #         if(free>0):
+    #             self.sorted_buckets.append((free,self.drives))
+    #         total_limit+=limit
+    #         total_usage+=usage
+    #         storage_info.append({
+    #             "Drive Number": index + 1,
+    #             "Storage Limit (bytes)": limit/1024**3,
+    #             "Used Storage (bytes)": usage/1024**3,
+    #             "Free Storage": (limit - usage)/1024**3,
+    #             "Provider": type(drive).__name__
+    #         })
+    #     self.sorted_buckets.sort(reverse=True,key=lambda x:x[0])
+    #     return storage_info, total_limit, total_usage
+    
+    def check_all_storage(self):
+        """Calculate the total storage, used space, and free space across all buckets."""
+        total_storage = 0
+        total_used = 0
+        buckets = self.get_all_authenticated_buckets()
+        if not buckets:
+            print("No authenticated buckets found.")
+            return
+        
+        for bucket in buckets:
+            drive = next((d for d in self.drives if isinstance(d, GoogleDrive)), None)
+            if not drive:
+                print(f"No GoogleDrive instance found for bucket {bucket}.")
+                continue
+            
+            drive.authenticate(int(bucket))
             limit, usage = drive.check_storage()
-            free = limit-usage
-            if(free>0):
-                self.sorted_buckets.append((free,self.drives))
-            total_limit+=limit
-            total_usage+=usage
-            storage_info.append({
-                "Drive Number": index + 1,
-                "Storage Limit (bytes)": limit/1024**3,
-                "Used Storage (bytes)": usage/1024**3,
-                "Free Storage": (limit - usage)/1024**3,
-                "Provider": type(drive).__name__
-            })
-        self.sorted_buckets.sort(reverse=True,key=lambda x:x[0])
-        return storage_info, total_limit, total_usage
+            total_storage += limit
+            total_used += usage
+        
+        print(f"Total Storage: {round(total_storage / (1024**3), 2)} GB")
+        print(f"Total Used: {round(total_used / (1024**3), 2)} GB")
+        print(f"Total Free: {round((total_storage - total_used) / (1024**3), 2)} GB")
     
     def get_sorted_buckets(self):
         """
