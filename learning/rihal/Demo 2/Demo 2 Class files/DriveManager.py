@@ -4,7 +4,7 @@ from google_drive import GoogleDrive
 import re
 
 #Manages multiple cloud storage services dynamically.
-class DriveManager():
+class DriveManager:
     #constructor
     def __init__(self, token_dir="tokens"):
         self.drives = []
@@ -76,7 +76,7 @@ class DriveManager():
             if match:
                 base = match.group(1)
                 part_num = match.group(2)
-                # Handle different pattern groups
+                #Handle different pattern groups
                 if pattern == patterns[1] and match.group(3):
                     base += match.group(3) if match.group(3) else ''
                 elif pattern == patterns[3] and match.group(3):
@@ -153,23 +153,23 @@ class DriveManager():
             except Exception as e:
                 print(f"Error retrieving files or storage details for bucket {bucket}: {e}")
 
-        # Sort files alphabetically by name
+        #Sort files alphabetically by name
         all_files.sort(key=lambda x: x[0])
 
-        # Pagination
+        #Pagination
         page_size = 30
         total_files = len(all_files)
         start_index = 0
 
         while start_index < total_files:
-            # Display paginated file results
+            #Display paginated file results
             print("\nFiles (Sorted Alphabetically):\n")
             for idx, (name, file_id, mime_type, size, file_url) in enumerate(all_files[start_index:start_index + page_size], start=start_index + 1):
                 size_str = f"{float(size) / 1024 ** 2:.2f} MB" if size != 'Unknown' else "Unknown size"
                 print(f"{idx}. {name} ({mime_type}) - {size_str}")
-                print(f"   Press here to view file: {file_url}\n")  # Display clickable link
+                print(f"   Press here to view file: {file_url}\n")      #Display clickable link
 
-            start_index += page_size  # Move to next batch of files
+            start_index += page_size        #Move to next batch of files
 
             if start_index < total_files:
                 more = input("\nDo you want to see more files? (y/n): ").strip().lower()

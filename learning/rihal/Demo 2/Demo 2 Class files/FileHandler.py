@@ -4,15 +4,11 @@ from abc import ABC, abstractmethod
 class FileHandler(ABC):
     
     @abstractmethod
-    def upload_chunk(self, chunk_str:str, mimetype:str, file_name:str, chunk_index:str):
-        pass
-    
-    @abstractmethod
-    def upload_file(self, file_path:str,file_name:str,mimetype:str):
+    def upload_file(self, file_path: str, file_name: str, mimetype: str):
         pass
 
     @abstractmethod
-    def split_and_upload_file(self, file_path: str, file_name: str, mimetype: str, file_size: str, free_space: str, metadata: str):
+    def upload_chunk(self, service, chunk_filename: str, mimetype: str, file_name: str, chunk_index: int):
         pass
 
     @abstractmethod
