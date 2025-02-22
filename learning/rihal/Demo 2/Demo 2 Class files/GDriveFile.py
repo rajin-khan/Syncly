@@ -25,8 +25,8 @@ os.makedirs(TOKEN_DIR, exist_ok=True)
 COMMON_EXTENSIONS = ['.jpg', '.pdf', '.png', '.txt', '.csv', '.docx', '.xlsx']
 
 class GoogleDriveFile(FileHandler):
-    def __init__(self):
-        self.drive_manager = DriveManager()
+    def __init__(self, drive_manager: DriveManager):
+        self.drive_manager = drive_manager
         self.google_drive = GoogleDrive()
 
     def upload_chunk(self, chunk_str:str, mimetype:str, file_name:str, chunk_index:str):
@@ -80,10 +80,9 @@ class GoogleDriveFile(FileHandler):
                     merged_file.write(chunk.read())
         print(f"Merged file saved at: {merged_file_path}")
 
-    def download_and_merge_chunks(self, file_name: str, save_path: str = "downloads"):
+    def download_and_merge_chunks(self, service, file_name: str, save_path: str = "downloads"):
         """Download and merge file chunks into a single file."""
         os.makedirs(save_path, exist_ok=True)
-        service = self.google_drive.authenticate(1)  # Authenticate with bucket number 1
 
         # Check if the full file exists first
         query = f"name contains '{file_name}' and not name contains '.part'"
@@ -127,9 +126,14 @@ class GoogleDriveFile(FileHandler):
         
         return merged_file_path
 
-    def download_from_all_buckets(self, file_name: str, save_path: str = "downloads"):
-        """Download a file from all buckets."""
+    """def download_from_all_buckets(self, file_name: str, save_path: str = "downloads"):
+        #Download a file from all buckets.
+        # Remove quotation marks from the save path (if any)
+        save_path = save_path.strip('"').strip("'")
+        
+        # Create the save directory if it doesn't exist
         os.makedirs(save_path, exist_ok=True)
+        
         bucket_numbers = self.drive_manager.get_all_authenticated_buckets()
         if not bucket_numbers:
             print("No authenticated buckets found. Please add a new bucket first.")
@@ -157,5 +161,55 @@ class GoogleDriveFile(FileHandler):
                 except Exception as e:
                     print(f"Error downloading from bucket {bucket}: {e}")
         
-        print("File not found in any bucket.")
+        print("File not found in any bucket.")"""
     
+    def download_from_all_buckets(self, file_name: str, save_path: str = "downloads"):
+        """Download a file from all buckets."""
+        # Remove quotation marks from the save path (if any)
+        save_path = save_path.strip('"').strip("'")
+        
+        # Create the save directory if it doesn't exist
+        os.makedirs(save_path, exist_ok=True)
+        
+        bucket_numbers = self.drive_manager.get_all_authenticated_buckets()
+        print(f"Authenticated Buckets: {bucket_numbers}")  # Debugging
+
+        if not bucket_numbers:
+            print("No authenticated buckets found. Please add a new bucket first.")
+            return
+        
+        # Check if the full file exists in any bucket
+        for bucket in bucket_numbers:
+            try:
+                print(f"Authenticating bucket {bucket}...")     #Debugging
+                service = self.google_drive.authenticate(int(bucket))
+                if service is None:
+                    print(f"Failed to authenticate bucket {bucket}.")
+                    continue
+                
+                print(f"Service object for bucket {bucket}: {service}")  # Debug: Verify the service object
+                result = self.download_and_merge_chunks(service, file_name, save_path)
+                if result:
+                    return result
+            except Exception as e:
+                print(f"Error downloading from bucket {bucket}: {e}")
+        
+        # If the exact file name is not found, try with common extensions
+        for ext in COMMON_EXTENSIONS:
+            full_file_name = f"{file_name}{ext}"
+            for bucket in bucket_numbers:
+                try:
+                    print(f"Authenticating bucket {bucket} for file {full_file_name}...")
+                    service = self.google_drive.authenticate(int(bucket))
+                    if service is None:
+                        print(f"Failed to authenticate bucket {bucket}.")
+                        continue
+                    
+                    print(f"Service object for bucket {bucket}: {service}")  # Debug: Verify the service object
+                    result = self.download_and_merge_chunks(service, full_file_name, save_path)
+                    if result:
+                        return result
+                except Exception as e:
+                    print(f"Error downloading from bucket {bucket}: {e}")
+        
+        print("File not found in any bucket.")

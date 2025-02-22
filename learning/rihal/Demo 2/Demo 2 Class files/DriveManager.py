@@ -1,10 +1,10 @@
 import os
 from service import service
-from google_drive import googleDrive
+from google_drive import GoogleDrive
 import re
 
 #Manages multiple cloud storage services dynamically.
-class DriveManager:
+class DriveManager():
     #constructor
     def __init__(self, token_dir="tokens"):
         self.drives = []
@@ -15,6 +15,7 @@ class DriveManager:
     def add_drive(self, drive: service, bucket_number):
         drive.authenticate(bucket_number) #we can remove this and make individual service accounts
         self.drives.append(drive)
+        
     #Checks storage usage for all drives.
     def check_all_storages(self):
         self.sorted_buckets = []
@@ -37,6 +38,7 @@ class DriveManager:
             })
         self.sorted_buckets.sort(reverse=True,key=lambda x:x[0])
         return storage_info, total_limit, total_usage
+    
     def get_sorted_buckets(self):
         """
         Return the sorted list of buckets with the most free space.
@@ -124,7 +126,7 @@ class DriveManager:
         for bucket in bucket_numbers:
             try:
                 # Use the googleDrive class to authenticate and list files
-                drive = next((d for d in self.drives if isinstance(d, googleDrive)), None)
+                drive = next((d for d in self.drives if isinstance(d, GoogleDrive)), None)
                 if not drive:
                     print(f"No googleDrive instance found for bucket {bucket}.")
                     continue
@@ -173,4 +175,3 @@ class DriveManager:
                 more = input("\nDo you want to see more files? (y/n): ").strip().lower()
                 if more != 'y':
                     break
-                
