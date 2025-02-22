@@ -4,7 +4,6 @@ from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from service import service
 from dotenv import load_dotenv
-import re
 
 #Load environment variables
 load_dotenv()
@@ -18,7 +17,7 @@ CREDENTIALS_FILE = os.getenv("CREDENTIALS_FILE", "credentials.json")
 METADATA_FILE = "metadata.json"
 os.makedirs(TOKEN_DIR, exist_ok=True)
 
-class GoogleDrive:
+class GoogleDrive(service):
     def __init__(self, token_dir="tokens", credentials_file="credentials.json"):
         self.token_dir = token_dir
         self.credentials_file = credentials_file
@@ -52,7 +51,7 @@ class GoogleDrive:
         #Build the service
         try:
             self.service = build("drive", "v3", credentials=creds)
-            return self.service  # Return the service object
+            return self.service  #Return the service object
         except Exception as e:
             return None
     
