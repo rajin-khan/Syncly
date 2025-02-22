@@ -37,7 +37,7 @@ class DropBoxFile:
             # Upload the entire file
             with open(file_path, "rb") as f:
                 best_bucket[1].client.files_upload(f.read(), f"/{file_name}", mode=WriteMode("overwrite"))
-            metadata["chunks"].append({"chunk_name": file_name, "account": best_bucket[1].bucket_number})
+            metadata["chunks"].append({"chunk_name": file_name, "account": best_bucket[1]})
         else:
             # Split the file into chunks and upload
             offset = 0
@@ -208,6 +208,9 @@ class DropBoxFile:
     
     def update_metadata(self, metadata):
         return super().update_metadata(metadata)
+    
+    def upload_chunk(self, chunk_str, mimetype, file_name, chunk_index):
+        return super().upload_chunk(chunk_str, mimetype, file_name, chunk_index)
     
     def upload_chunk(self, chunk_str, mimetype, file_name, chunk_index):
         return super().upload_chunk(chunk_str, mimetype, file_name, chunk_index)
