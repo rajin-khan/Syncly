@@ -12,19 +12,19 @@ from FileHandler import FileHandler
 from google_drive import GoogleDrive
 from DriveManager import DriveManager
 
-# Load environment variables
+#Load environment variables
 load_dotenv()
 
-# API scope
+#API scope
 SCOPES = ['https://www.googleapis.com/auth/drive']
 
-# Get paths from environment
+#Get paths from environment
 TOKEN_DIR = os.getenv("TOKEN_DIR", "tokens")
 CREDENTIALS_FILE = os.getenv("CREDENTIALS_FILE", "credentials.json")
 METADATA_FILE = "metadata.json"
 os.makedirs(TOKEN_DIR, exist_ok=True)
 
-# List of common file extensions to check
+#List of common file extensions to check
 COMMON_EXTENSIONS = ['.jpg', '.pdf', '.png', '.txt', '.csv', '.docx', '.xlsx']
 
 class GoogleDriveFile(FileHandler):
@@ -37,17 +37,16 @@ class GoogleDriveFile(FileHandler):
         Upload a file to Google Drive. If the file is larger than the available space in a single bucket,
         it will be split into chunks and uploaded across multiple buckets.
         """
-        # Get file size
+        #Get file size
         file_size = os.path.getsize(file_path)
-        print(f"File size: {file_size} bytes")  # Debug: Print file size
         
-        # Get all authenticated buckets
+        #Get all authenticated buckets
         buckets = self.drive_manager.get_all_authenticated_buckets()
         if not buckets:
             print("No authenticated buckets found. Please add a new bucket first.")
             return
         
-        # Calculate free space in each bucket
+        #Calculate free space in each bucket
         free_space = []
         total_free = 0
         for bucket in buckets:
@@ -62,23 +61,20 @@ class GoogleDriveFile(FileHandler):
             if free > 0:
                 free_space.append([free, bucket])
         
-        print(f"Total free space across all buckets: {total_free} bytes")  # Debug: Print total free space
-        
-        # Check if there is enough total free space
+        #Check if there is enough total free space
         if total_free < file_size:
             print("Not enough space across all buckets.")
             return
         
-        # Sort buckets by free space (descending)
+        #Sort buckets by free space (descending)
         free_space.sort(reverse=True, key=lambda x: x[0])
-        print(f"Free space per bucket: {free_space}")  # Debug: Print free space per bucket
         
-        # Metadata to track uploaded chunks
+        #Metadata to track uploaded chunks
         metadata = {"file_name": file_name, "chunks": []}
         
-        # Upload the file
+        #Upload the file
         if free_space[0][0] >= file_size:
-            # Upload the entire file to the best bucket
+            #Upload the entire file to the best bucket
             best_bucket = free_space[0][1]
             service = self.google_drive.authenticate(int(best_bucket))
             if service is None:
@@ -95,21 +91,19 @@ class GoogleDriveFile(FileHandler):
                     "file_id": file_id,
                     "bucket": best_bucket
                 })
-                print(f"File uploaded successfully to bucket {best_bucket}.")  # Debug: Print success message
             except HttpError as e:
                 print(f"Error uploading file to bucket {best_bucket}: {e}")
                 return
         else:
-            # Split the file into chunks and upload to multiple buckets
+            #Split the file into chunks and upload to multiple buckets
             offset = 0
             chunk_index = 0
             with open(file_path, "rb") as file:
                 while offset < file_size:
-                    # Sort buckets by free space (descending)
+                    #Sort buckets by free space (descending)
                     free_space.sort(reverse=True, key=lambda x: x[0])
-                    print(f"Free space per bucket: {free_space}")  # Debug: Print free space per bucket
                     
-                    # Find a bucket with enough space
+                    #Find a bucket with enough space
                     selected_bucket = None
                     for i, (bucket_free, bucket_id) in enumerate(free_space):
                         if bucket_free > 0:
@@ -121,15 +115,15 @@ class GoogleDriveFile(FileHandler):
                         print("No available buckets with free space.")
                         break
                     
-                    # Calculate chunk size
+                    #Calculate chunk size
                     chunk_size = min(free_space[selected_index][0], file_size - offset)
                     chunk_filename = f"{file_path}.part{chunk_index}"
                     
-                    # Write the chunk to a temporary file
+                    #Write the chunk to a temporary file
                     with open(chunk_filename, "wb") as chunk_file:
                         chunk_file.write(file.read(chunk_size))
                     
-                    # Upload the chunk
+                    #Upload the chunk
                     file_id = None
                     uploaded = False
                     while not uploaded:
@@ -144,7 +138,7 @@ class GoogleDriveFile(FileHandler):
                         except HttpError as e:
                             if "storageQuotaExceeded" in str(e):
                                 print(f"Bucket {selected_bucket} is full. Trying next bucket.")
-                                free_space[selected_index][0] = 0  # Mark bucket as full
+                                free_space[selected_index][0] = 0       #Mark bucket as full
                                 break
                             else:
                                 os.remove(chunk_filename)
@@ -153,22 +147,22 @@ class GoogleDriveFile(FileHandler):
                     if file_id is None:
                         raise RuntimeError("Failed to upload chunk after retries")
                     
-                    # Update metadata
+                    #Update metadata
                     metadata["chunks"].append({
                         "chunk_name": f"{file_name}_part{chunk_index + 1}",
                         "file_id": file_id,
                         "bucket": selected_bucket
                     })
                     
-                    # Update remaining space and offset
+                    #Update remaining space and offset
                     free_space[selected_index][0] -= chunk_size
                     offset += chunk_size
                     chunk_index += 1
                     
-                    # Clean up the temporary chunk file
+                    #Clean up the temporary chunk file
                     os.remove(chunk_filename)
         
-        # Update metadata file
+        #Update metadata file
         self.update_metadata(metadata)
 
     def upload_chunk(self, service, chunk_filename: str, mimetype: str, file_name: str, chunk_index: int):
@@ -204,15 +198,15 @@ class GoogleDriveFile(FileHandler):
             print("Upload complete. Metadata updated.")
 
     def download_file(self, service, file_id: str, save_path: str):
-        """Download a file from Google Drive."""
-        service = self.google_drive.authenticate(1)  # Authenticate with bucket number 1
+        #Download a file from Google Drive.
+        service = self.google_drive.authenticate(1)         #Authenticate with bucket number 1
         try:
             request = service.files().get_media(fileId=file_id)
             file_metadata = service.files().get(fileId=file_id, fields="name").execute()
-            file_name = file_metadata.get("name")  # Preserve the original file name with extension
+            file_name = file_metadata.get("name")       #Preserve the original file name with extension
             save_file_path = os.path.join(save_path, file_name)
             
-            # Download the file
+            #Download the file
             with open(save_file_path, "wb") as file:
                 downloader = MediaIoBaseDownload(file, request)
                 done = False
@@ -244,7 +238,7 @@ class GoogleDriveFile(FileHandler):
         """Download and merge file chunks into a single file."""
         os.makedirs(save_path, exist_ok=True)
 
-        # Check if the full file exists first
+        #Check if the full file exists first
         query = f"name contains '{file_name}' and not name contains '.part'"
         result = service.files().list(q=query, fields="files(id, name)").execute()
         files = result.get("files", [])
@@ -254,7 +248,7 @@ class GoogleDriveFile(FileHandler):
             print("File found, downloading directly.")
             return self.download_file(service, file_id, save_path)
         
-        # If full file not found, check for chunks
+        #If full file not found, check for chunks
         query = f"name contains '{file_name}.part'"
         results = service.files().list(q=query, fields="files(id, name)").execute()
         chunk_files = results.get("files", [])
@@ -263,12 +257,12 @@ class GoogleDriveFile(FileHandler):
             print(f"\nChecking another bucket...")
             return None
         
-        # Sort chunks numerically by part number
+        #Sort chunks numerically by part number
         chunk_files.sort(key=lambda x: int(re.search(r'\.part(\d+)$', x['name']).group(1)))
         
-        # Extract original filename with extension from first chunk
+        #Extract original filename with extension from first chunk
         original_filename = re.sub(r'\.part\d+$', '', chunk_files[0]['name'])
-        merged_file_path = os.path.join(save_path, original_filename)  # Use extracted name
+        merged_file_path = os.path.join(save_path, original_filename)       #Use extracted name
         
         chunk_paths = []
         for file in chunk_files:
@@ -277,10 +271,10 @@ class GoogleDriveFile(FileHandler):
             if chunk_path:
                 chunk_paths.append(chunk_path)
         
-        # Merge chunks and save with original extension
+        #Merge chunks and save with original extension
         self.merge_chunks(chunk_paths, merged_file_path)
         
-        # Clean up chunk files
+        #Clean up chunk files
         for chunk_path in chunk_paths:
             os.remove(chunk_path)
         
@@ -288,10 +282,10 @@ class GoogleDriveFile(FileHandler):
 
     def download_from_all_buckets(self, file_name: str, save_path: str = "downloads"):
         #Download a file from all buckets.
-        # Remove quotation marks from the save path (if any)
+        #Remove quotation marks from the save path (if any)
         save_path = save_path.strip('"').strip("'")
         
-        # Create the save directory if it doesn't exist
+        #Create the save directory if it doesn't exist
         os.makedirs(save_path, exist_ok=True)
         
         bucket_numbers = self.drive_manager.get_all_authenticated_buckets()
@@ -299,7 +293,7 @@ class GoogleDriveFile(FileHandler):
             print("No authenticated buckets found. Please add a new bucket first.")
             return
         
-        # Check if the full file exists in any bucket
+        #Check if the full file exists in any bucket
         for bucket in bucket_numbers:
             try:
                 service = self.google_drive.authenticate(int(bucket))
@@ -309,7 +303,7 @@ class GoogleDriveFile(FileHandler):
             except Exception as e:
                 print(f"Error downloading from bucket {bucket}: {e}")
         
-        # If the exact file name is not found, try with common extensions
+        #If the exact file name is not found, try with common extensions
         for ext in COMMON_EXTENSIONS:
             full_file_name = f"{file_name}{ext}"
             for bucket in bucket_numbers:

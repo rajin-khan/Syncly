@@ -94,11 +94,11 @@ class DriveManager:
             print("No authenticated buckets found. Please add a new bucket first.")
             return
 
-        max_files = 100  # Default value
+        max_files = 100  #Default value
         if query:
             print(f"\nSearching for files containing: '{query}' across all buckets...")
         else:
-            # Ask user for the number of files to retrieve
+            #Ask user for the number of files to retrieve
             print("\nHow many files would you like to retrieve? (More files take longer to retrieve)")
             print("1: ~ 50 files")
             print("2: ~ 100 files")
@@ -121,7 +121,7 @@ class DriveManager:
                 max_files = 100
 
         all_files = []
-        seen_files = set()  # Track files to avoid duplicates
+        seen_files = set()  #Track files to avoid duplicates
 
         for bucket in bucket_numbers:
             try:
@@ -138,17 +138,17 @@ class DriveManager:
                     file_name = file['name']
                     mime_type = file.get('mimeType', 'Unknown')
                     size = file.get('size', 'Unknown')
-                    file_url = f"https://drive.google.com/file/d/{file_id}/view"  # Generate Google Drive file URL
+                    file_url = f"https://drive.google.com/file/d/{file_id}/view"        #Generate Google Drive file URL
 
-                    # Check if the file is part of a split file
+                    #Check if the file is part of a split file
                     base_name, part_num = self.parse_part_info(file_name)
                     if base_name:
-                        if part_num == 0:  # Only include part0
-                            if base_name not in seen_files:  # Avoid duplicates
+                        if part_num == 0:  #Only include part0
+                            if base_name not in seen_files:  #Avoid duplicates
                                 all_files.append((file_name, file_id, mime_type, size, file_url))
                                 seen_files.add(base_name)
                     else:
-                        # Include non-split files
+                        #Include non-split files
                         all_files.append((file_name, file_id, mime_type, size, file_url))
             except Exception as e:
                 print(f"Error retrieving files or storage details for bucket {bucket}: {e}")

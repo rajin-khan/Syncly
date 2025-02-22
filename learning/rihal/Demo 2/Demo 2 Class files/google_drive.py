@@ -23,53 +23,37 @@ class GoogleDrive:
         self.token_dir = token_dir
         self.credentials_file = credentials_file
         self.scopes = ['https://www.googleapis.com/auth/drive']
-        self.service = None  # Store the authenticated service instance
+        self.service = None         #Store the authenticated service instance
         os.makedirs(self.token_dir, exist_ok=True)
 
     def authenticate(self, bucket_number):
         token_path = os.path.join(self.token_dir, f"bucket_{bucket_number}.json")
-        print(f"Token path: {token_path}")  # Debug: Print the token file path
 
         if os.path.exists(token_path):
-            print(f"Token file found for bucket {bucket_number}.")  # Debug: Token file exists
-            try:
-                creds = Credentials.from_authorized_user_file(token_path, self.scopes)
-                if creds.valid:
-                    print(f"Credentials are valid for bucket {bucket_number}.")  # Debug: Credentials are valid
-                    self.service = build("drive", "v3", credentials=creds)
-                    return self.service  # Return the service object
-                else:
-                    print(f"Invalid credentials for bucket {bucket_number}.")  # Debug: Credentials are invalid
-            except Exception as e:
-                print(f"Error loading credentials for bucket {bucket_number}: {e}")  # Debug: Error loading credentials
-        else:
-            print(f"No token found for bucket {bucket_number}. Starting OAuth flow...")  # Debug: No token file
+            creds = Credentials.from_authorized_user_file(token_path, self.scopes)
+            if creds.valid:
+                self.service = build("drive", "v3", credentials=creds)
+                return self.service  #Return the service object
 
-        # Start OAuth flow
+        #Start OAuth flow
         try:
             flow = InstalledAppFlow.from_client_secrets_file(self.credentials_file, self.scopes)
             creds = flow.run_local_server(port=0)
-            print("OAuth flow completed successfully.")  # Debug: OAuth flow completed
         except Exception as e:
-            print(f"Error during OAuth flow for bucket {bucket_number}: {e}")  # Debug: Error during OAuth flow
             return None
 
-        # Save the token file
+        #Save the token file
         try:
             with open(token_path, "w") as token_file:
                 token_file.write(creds.to_json())
-            print(f"Token file saved successfully for bucket {bucket_number}.")  # Debug: Token file saved
         except Exception as e:
-            print(f"Error saving token file for bucket {bucket_number}: {e}")  # Debug: Error saving token file
             return None
 
-        # Build the service
+        #Build the service
         try:
             self.service = build("drive", "v3", credentials=creds)
-            print(f"Service created successfully for bucket {bucket_number}.")  # Debug: Service created
             return self.service  # Return the service object
         except Exception as e:
-            print(f"Error creating service for bucket {bucket_number}: {e}")  # Debug: Error creating service
             return None
     
     def listFiles(self, max_results=None, query=None):
@@ -105,7 +89,6 @@ class GoogleDrive:
             res = self.service.about().get(fields='storageQuota').execute()
             limit = int(res['storageQuota']['limit'])
             usage = int(res['storageQuota']['usage'])
-            print(f"Storage limit: {limit} bytes, Usage: {usage} bytes")  # Debug: Print storage details
             return limit, usage
         except Exception as e:
             print(f"Error checking storage: {e}")
