@@ -1,13 +1,13 @@
 import os
-import json
-import googleapiclient
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 from google.oauth2.credentials import Credentials
 from dotenv import load_dotenv
 import re
-from DriveManager import DriveManager  # Assuming DriveManager is in a separate file
+from FileHandler import FileHandler
+from google_drive import GoogleDrive
+from DriveManager import DriveManager
 
 # Load environment variables
 load_dotenv()
@@ -24,255 +24,28 @@ os.makedirs(TOKEN_DIR, exist_ok=True)
 # List of common file extensions to check
 COMMON_EXTENSIONS = ['.jpg', '.pdf', '.png', '.txt', '.csv', '.docx', '.xlsx']
 
-class GDriveFile:
+class GoogleDriveFile(FileHandler):
     def __init__(self):
-        self.DriveManager = DriveManager(TOKEN_DIR)
+        self.drive_manager = DriveManager()
+        self.google_drive = GoogleDrive()
 
-    def authenticate_account(self, bucket_number):
-        token_path = os.path.join(TOKEN_DIR, f"bucket_{bucket_number}.json")
-        if os.path.exists(token_path):
-            creds = Credentials.from_authorized_user_file(token_path, SCOPES)
-            if creds.valid:
-                return build("drive", "v3", credentials=creds)
-        flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_FILE, SCOPES)
-        creds = flow.run_local_server(port=0)
-        with open(token_path, "w") as token_file:
-            token_file.write(creds.to_json())
-        return build("drive", "v3", credentials=creds)
+    def upload_chunk(self, chunk_str:str, mimetype:str, file_name:str, chunk_index:str):
+        pass
+    
+    def upload_file(self, file_path:str,file_name:str,mimetype:str):
+        pass
 
-    def list_drive_files(self, service, max_results=None, query=None):
-        all_files = []
-        page_token = None
-        query_filter = f"name contains '{query}'" if query else None
-        while True:
-            results = service.files().list(
-                pageSize=100,
-                fields="nextPageToken, files(id, name, mimeType, size)",
-                pageToken=page_token,
-                q=query_filter
-            ).execute()
-            all_files.extend(results.get('files', []))
-            if max_results and len(all_files) >= max_results:
-                return all_files[:max_results]
-            page_token = results.get('nextPageToken')
-            if not page_token:
-                break
-        return all_files
+    def split_and_upload_file(self, file_path: str, file_name: str, mimetype: str, file_size: str, free_space: str, metadata: str):
+        pass
 
-    def check_storage(self, service, bucket):
-        try:
-            res = service.about().get(fields='storageQuota').execute()
-            limit = int(res['storageQuota']['limit'])
-            usage = int(res['storageQuota']['usage'])
-            return limit, usage
-        except Exception as e:
-            print(f"Error for {bucket}: {e}")
-            return 0, 0
+    def update_metadata(self, metadata: str):
+        """Update metadata for a file."""
+        # Implementation for updating metadata in Google Drive
+        pass
 
-    def parse_part_info(self, file_name):
-        """Extract base name and part number from split filenames with improved regex."""
-        patterns = [
-            r'^(.*?)\.part(\d+)$',                 # .part0, .part1
-            r'^(.*?)_part[\_\-]?(\d+)(\..*)?$',    # _part0, _part_1, _part-2
-            r'^(.*?)\.(\d+)$',                     # .000, .001 (common split convention)
-            r'^(.*?)(\d{3})(\..*)?$'               # Generic 3-digit numbering (e.g., .001)
-        ]
-        
-        for pattern in patterns:
-            match = re.match(pattern, file_name)
-            if match:
-                base = match.group(1)
-                part_num = match.group(2)
-                # Handle different pattern groups
-                if pattern == patterns[1] and match.group(3):
-                    base += match.group(3) if match.group(3) else ''
-                elif pattern == patterns[3] and match.group(3):
-                    base += match.group(3)
-                try:
-                    return base, int(part_num)
-                except ValueError:
-                    continue
-        return None, None
-
-    def list_files_from_all_buckets(self, query=None):
-        bucket_numbers = self.DriveManager.get_all_authenticated_buckets()
-        if not bucket_numbers:
-            print("No authenticated buckets found. Please add a new bucket first.")
-            return
-        max_files = 100    # just initializing
-        if query:
-            print(f"\nSearching for files containing: '{query}' across all buckets...")
-        else:
-            # Ask user for the number of files to retrieve
-            print("\nHow many files would you like to retrieve? (More files take longer to retrieve)")
-            print("1: ~ 50 files")
-            print("2: ~ 100 files")
-            print("3: ~ 500 files")
-            print("4: All available files (Takes much longer)")
-
-            choice = input("Enter a number (1-4): ").strip()
-
-            if choice == "1":
-                max_files = 50
-            elif choice == "2":
-                max_files = 100
-            elif choice == "3":
-                max_files = 500
-            elif choice == "4":
-                max_files = None  # Fetch all files
-                print("\nFetching all available files....")
-            else:
-                print("Invalid choice. Defaulting to 100 files.")
-                max_files = 100
-
-        all_files = []
-        seen_files = set()  # Track files to avoid duplicates
-
-        for bucket in bucket_numbers:
-            try:
-                service = self.authenticate_account(bucket)
-                files = self.list_drive_files(service, max_files, query)  # Retrieve user-defined limit or search query
-                for file in files:
-                    file_id = file['id']
-                    file_name = file['name']
-                    mime_type = file.get('mimeType', 'Unknown')
-                    size = file.get('size', 'Unknown')
-                    file_url = f"https://drive.google.com/file/d/{file_id}/view"  # Generate Google Drive file URL
-
-                    # Check if the file is part of a split file
-                    base_name, part_num = self.parse_part_info(file_name)
-                    if base_name:
-                        if part_num == 0:  # Only include part0
-                            if base_name not in seen_files:  # Avoid duplicates
-                                all_files.append((file_name, file_id, mime_type, size, file_url))
-                                seen_files.add(base_name)
-                    else:
-                        # Include non-split files
-                        all_files.append((file_name, file_id, mime_type, size, file_url))
-            except Exception as e:
-                print(f"Error retrieving files or storage details for a bucket: {e}")
-
-        # Sort files alphabetically by name
-        all_files.sort(key=lambda x: x[0])
-
-        # Pagination
-        page_size = 30
-        total_files = len(all_files)
-        start_index = 0
-
-        while start_index < total_files:
-            # Display paginated file results
-            print("\nFiles (Sorted Alphabetically):\n")
-            for idx, (name, file_id, mime_type, size, file_url) in enumerate(all_files[start_index:start_index + page_size], start=start_index + 1):
-                size_str = f"{float(size) / 1024 ** 2:.2f} MB" if size != 'Unknown' else "Unknown size"
-                print(f"{idx}. {name} ({mime_type}) - {size_str}")
-                print(f"   Press here to view file: {file_url}\n")  # Display clickable link
-
-            start_index += page_size  # Move to next batch of files
-
-            if start_index < total_files:
-                more = input("\nDo you want to see more files? (y/n): ").strip().lower()
-                if more != 'y':
-                    break
-
-    def upload_chunk(self, service, chunk_path, mimetype, file_name, chunk_index):
-        media = MediaFileUpload(chunk_path, mimetype=mimetype, resumable=True)
-        file_metadata = {'name': f'{file_name}_part{chunk_index + 1}'}
-        result = service.files().create(media_body=media, body=file_metadata).execute()
-        return result.get("id")
-
-    def upload_file(self, file_path, file_name, mimetype):
-        file_size = os.path.getsize(file_path)
-        bucket_numbers = self.DriveManager.get_all_authenticated_buckets()
-        free_space = []
-        total_free = 0
-        for bucket in bucket_numbers:
-            service = self.authenticate_account(bucket)
-            total, used = self.check_storage(service, bucket)
-            free = total - used
-            total_free += free
-            if free > 0:
-                free_space.append([free, bucket])
-        if total_free < file_size:
-            print("Not enough space.")
-            return
-        free_space.sort(reverse=True, key=lambda x: x[0])
-        metadata = {"file_name": file_name, "chunks": []}
-        best_bucket = free_space[0][1]
-        service = self.authenticate_account(best_bucket)
-        if free_space[0][0] >= file_size:
-            media = MediaFileUpload(file_path, mimetype=mimetype, resumable=True)
-            file_metadata = {'name': file_name}
-            result = service.files().create(media_body=media, body=file_metadata).execute()
-            file_id = result.get("id")
-            metadata["chunks"].append({"chunk_name": file_name, "file_id": file_id, "bucket": best_bucket})
-        else:
-            offset = 0
-            chunk_index = 0
-            with open(file_path, "rb") as file:
-                while offset < file_size:
-                    # Sort and get the best available bucket
-                    free_space.sort(reverse=True, key=lambda x: x[0])
-                    print(free_space)
-                    # Find a bucket with enough space
-                    selected_bucket = None
-                    for i, (bucket_free, bucket_id) in enumerate(free_space):
-                        if bucket_free > 0:
-                            selected_bucket = bucket_id
-                            selected_index = i
-                            break
-                    if not selected_bucket:
-                        print("No available buckets with free space.")
-                        break
-                    chunk_size = min(free_space[selected_index][0], file_size - offset)
-                    chunk_filename = f"{file_path}.part{chunk_index}"
-                    with open(chunk_filename, "wb") as chunk_file:
-                        chunk_file.write(file.read(chunk_size))
-                    file_id = None
-                    uploaded = False
-                    while not uploaded:
-                        service = self.authenticate_account(selected_bucket)
-                        try:
-                            file_id = self.upload_chunk(service, chunk_filename, mimetype, file_name, chunk_index)
-                            uploaded = True
-                        except googleapiclient.errors.HttpError as e:
-                            if "storageQuotaExceeded" in str(e):
-                                print(f"Bucket {selected_bucket} is full. Trying next bucket.")
-                                free_space[selected_index][0] = 0  # Mark bucket as full
-                                break
-                            else:
-                                os.remove(chunk_filename)
-                                raise e
-                    if file_id is None:
-                        raise RuntimeError("Failed to upload chunk after retries")
-                    metadata["chunks"].append({
-                        "chunk_name": f"{file_name}_part{chunk_index + 1}",
-                        "file_id": file_id,
-                        "bucket": selected_bucket
-                    })
-                    # Update remaining space after successful upload
-                    free_space[selected_index][0] -= chunk_size
-                    offset += chunk_size
-                    chunk_index += 1
-                    os.remove(chunk_filename)
-        # Update metadata
-        if os.path.exists(METADATA_FILE) and os.path.getsize(METADATA_FILE) > 0:
-            with open(METADATA_FILE, 'r') as f:
-                try:
-                    existing_metadata = json.load(f)
-                    if not isinstance(existing_metadata, list):  
-                        existing_metadata = [existing_metadata]
-                except json.JSONDecodeError:
-                    print("Warning: Metadata file is corrupted. Resetting metadata.")
-                    existing_metadata = []
-        else:
-            existing_metadata = []
-        existing_metadata.append(metadata)
-        with open(METADATA_FILE, 'w') as f:
-            json.dump(existing_metadata, f, indent=4)
-            print("Upload complete. Metadata updated.")
-
-    def download_file(self, service, file_id, save_path):
+    def download_file(self, file_id: str, save_path: str):
+        """Download a file from Google Drive."""
+        service = self.google_drive.authenticate(1)  # Authenticate with bucket number 1
         try:
             request = service.files().get_media(fileId=file_id)
             file_metadata = service.files().get(fileId=file_id, fields="name").execute()
@@ -293,15 +66,25 @@ class GDriveFile:
             print(f"Error downloading file: {e}")
             return None
 
-    def merge_chunks(self, file_paths, merged_file_path):
+    def search_file(self):
+        """Search for files in Google Drive."""
+        query = input("Enter search keyword: ").strip()
+        if query:
+            self.drive_manager.list_files_from_all_buckets(query=query)
+
+    def merge_chunks(self, file_paths: str, merged_file_path: str):
+        """Merge file chunks into a single file."""
         with open(merged_file_path, "wb") as merged_file:
             for chunk_path in file_paths:
                 with open(chunk_path, "rb") as chunk:
                     merged_file.write(chunk.read())
         print(f"Merged file saved at: {merged_file_path}")
 
-    def download_and_merge_chunks(self, service, file_name, save_path="downloads"):
+    def download_and_merge_chunks(self, file_name: str, save_path: str = "downloads"):
+        """Download and merge file chunks into a single file."""
         os.makedirs(save_path, exist_ok=True)
+        service = self.google_drive.authenticate(1)  # Authenticate with bucket number 1
+
         # Check if the full file exists first
         query = f"name contains '{file_name}' and not name contains '.part'"
         result = service.files().list(q=query, fields="files(id, name)").execute()
@@ -344,9 +127,10 @@ class GDriveFile:
         
         return merged_file_path
 
-    def download_from_all_buckets(self, file_name, save_path="downloads"):
+    def download_from_all_buckets(self, file_name: str, save_path: str = "downloads"):
+        """Download a file from all buckets."""
         os.makedirs(save_path, exist_ok=True)
-        bucket_numbers = self.DriveManager.get_all_authenticated_buckets()
+        bucket_numbers = self.drive_manager.get_all_authenticated_buckets()
         if not bucket_numbers:
             print("No authenticated buckets found. Please add a new bucket first.")
             return
@@ -354,7 +138,7 @@ class GDriveFile:
         # Check if the full file exists in any bucket
         for bucket in bucket_numbers:
             try:
-                service = self.authenticate_account(bucket)
+                service = self.google_drive.authenticate(int(bucket))
                 result = self.download_and_merge_chunks(service, file_name, save_path)
                 if result:
                     return result
@@ -366,7 +150,7 @@ class GDriveFile:
             full_file_name = f"{file_name}{ext}"
             for bucket in bucket_numbers:
                 try:
-                    service = self.authenticate_account(bucket)
+                    service = self.google_drive.authenticate(int(bucket))
                     result = self.download_and_merge_chunks(service, full_file_name, save_path)
                     if result:
                         return result
@@ -374,32 +158,4 @@ class GDriveFile:
                     print(f"Error downloading from bucket {bucket}: {e}")
         
         print("File not found in any bucket.")
-
-    def search_files(self):
-        query = input("Enter search keyword: ").strip()
-        if query:
-            self.list_files_from_all_buckets(query=query)
-
-    def run(self):
-        print("Syncly Demo 1")
-        while True:
-            print("\n-------------Storage Details-------------")
-            self.DriveManager.check_all_storages()
-            print("-------------------------------------------")
-            print("\n1: View Files\n2: Search\n3: Add Bucket\n4: Upload\n5: Download\n6: Exit")
-            choice = input("Choose option: ").strip()
-            if choice == "1":
-                self.list_files_from_all_buckets()
-            elif choice == "2":
-                self.search_files()
-            elif choice == "3":
-                self.DriveManager.add_drive(self, bucket_number=len(self.drive_manager.get_all_authenticated_buckets()) + 1)
-            elif choice == "4":
-                file_path = input("File path: ").strip()
-                self.upload_file(file_path, os.path.basename(file_path), "application/octet-stream")
-            elif choice == "5":
-                file_name = input("Enter file name to download (without extension): ").strip()
-                save_path = input("Enter save path (default: downloads): ").strip()
-                if not save_path:
-                    save_path = "downloads"
-             
+    
