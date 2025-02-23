@@ -8,7 +8,7 @@ from google.oauth2.credentials import Credentials
 from dotenv import load_dotenv
 import re
 from FileHandler import FileHandler
-from google_drive import GoogleDrive
+from GoogleDrive import GoogleDrive
 from DriveManager import DriveManager
 
 #Load environment variables
@@ -159,6 +159,9 @@ class GoogleDriveFile(FileHandler):
         
         #Update metadata file
         self.update_metadata(metadata)
+
+    def split_and_upload_file(self,file_path:str, file_name:str, mimetype:str, file_size:str, free_space:str, metadata:str):
+        pass
 
     def upload_chunk(self, service, chunk_filename: str, mimetype: str, file_name: str, chunk_index: int):
         """

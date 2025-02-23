@@ -4,15 +4,19 @@ from abc import ABC, abstractmethod
 class FileHandler(ABC):
     
     @abstractmethod
-    def upload_file(self, file_path: str, file_name: str, mimetype: str):
+    def upload_chunk(self, chunk_str:str, mimetype:str, file_name:str, chunk_index:str):
+        pass
+    
+    @abstractmethod
+    def upload_file(self, file_path:str,file_name:str,mimetype:str):
         pass
 
     @abstractmethod
-    def upload_chunk(self, service, chunk_filename: str, mimetype: str, file_name: str, chunk_index: int):
+    def split_and_upload_file(self,file_path:str, file_name:str, mimetype:str, file_size:str, free_space:str, metadata:str):
         pass
 
     @abstractmethod
-    def update_metadata(self, metadata: str):
+    def update_metadata(self,metadata:str):
         pass
     
     @abstractmethod
@@ -30,8 +34,3 @@ class FileHandler(ABC):
     @abstractmethod
     def download_and_merge_chunks(self, file_name:str, save_path:str):
         pass
-
-    @abstractmethod
-    def download_from_all_buckets(self, file_name:str, save_path:str):
-        pass
-    
