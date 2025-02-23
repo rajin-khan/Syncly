@@ -119,15 +119,18 @@ def main():
     print(f"Free Space: {round((limit - usage) / 1024**3, 2)} GB")
 
     while True:
-        print("\n1: Upload File\n2: Download File\n3: Exit")
+        print("\n1: View Files\n2: Upload File\n3: Download File\n4: Exit")
         choice = input("Choose option: ").strip()
 
         if choice == "1":
-            upload_file(drive_manager)
+            #View files across all buckets (Google Drive and Dropbox)
+            drive_manager.list_files_from_all_buckets()
         elif choice == "2":
+            upload_file(drive_manager)
+        elif choice == "3":
             file_to_find = input("Enter the file name to search: ").strip()
             search_and_download_file(drive_manager, file_to_find)
-        elif choice == "3":
+        elif choice == "4":
             print("Thank you for using Syncly!")
             break
         else:
