@@ -40,7 +40,7 @@ def upload_file(drive_manager):
         print(f"Selected drive with the most free space: Bucket {bucket_number}")
 
         # **Upload file to the best available drive**
-        file_path = input("File path: ").strip()  # User inputs the file path
+        file_path = input("File path: ").strip('"').strip("'")  # User inputs the file path
         file_name = os.path.basename(file_path)  # Extract file name
 
         try:
@@ -103,23 +103,23 @@ def main():
     # **Check storage for all services**
     storages, limit, usage = drive_manager.check_all_storages()
 
-    # Print storage details
-    for storage in storages:
-        print(f"{storage['Provider']} - Drive {storage['Drive Number']}:")
-        print(f"  - Storage Limit: {storage['Storage Limit (bytes)']:.2f} GB")
-        print(f"  - Used Storage: {storage['Used Storage (bytes)']:.2f} GB")
-        print(f"  - Free Storage: {storage['Free Storage']:.2f} GB")
-        print("-" * 30)
-
-    # **Print Total Storage**
-    print("Storage Details")
-    print("-" * 30)
-    print(f"Total Storage: {round(limit / 1024**3, 2)} GB")
-    print(f"Used Space: {round(usage / 1024**3, 2)} GB")
-    print(f"Free Space: {round((limit - usage) / 1024**3, 2)} GB")
-
+    print("WELCOME TO SYNCLY! <3")
     while True:
-        print("\n1: View Files\n2: Upload File\n3: Download File\n4: Exit")
+        # Print storage details
+        for storage in storages:
+            print(f"{storage['Provider']} - Drive {storage['Drive Number']}:")
+            print(f"  - Storage Limit: {storage['Storage Limit (bytes)']:.2f} GB")
+            print(f"  - Used Storage: {storage['Used Storage (bytes)']:.2f} GB")
+            print(f"  - Free Storage: {storage['Free Storage']:.2f} GB")
+            print("-" * 30)
+
+        # **Print Total Storage**
+        print("Storage Details")
+        print("-" * 30)
+        print(f"Total Storage: {round(limit / 1024**3, 2)} GB")
+        print(f"Used Space: {round(usage / 1024**3, 2)} GB")
+        print(f"Free Space: {round((limit - usage) / 1024**3, 2)} GB")
+        print("\n1: View Files\n2: Upload File\n3: Download File\n4: Add New Bucket\n5: Exit")
         choice = input("Choose option: ").strip()
 
         if choice == "1":
@@ -128,9 +128,27 @@ def main():
         elif choice == "2":
             upload_file(drive_manager)
         elif choice == "3":
-            file_to_find = input("Enter the file name to search: ").strip()
-            search_and_download_file(drive_manager, file_to_find)
+            file_to_find = input("Enter the file name to search: ").strip('"').strip("'")
+            save_path = input("Enter the folder path in which you want to save: ").strip('"').strip("'")
+            search_and_download_file(drive_manager, file_to_find, save_path)
         elif choice == "4":
+            #Add a new bucket (Google Drive or Dropbox)
+            bucket_type = input("Enter bucket type (1: Google Drive, 2: Dropbox): ").strip()
+            bucket_number = len(drive_manager.get_all_authenticated_buckets()) + 1
+
+            if bucket_type == "1":
+                # Add a new Google Drive bucket
+                google_drive_instance = GoogleDrive()
+                drive_manager.add_drive(google_drive_instance, bucket_number)
+                print(f"Google Drive bucket {bucket_number} added successfully.")
+            elif bucket_type == "2":
+                # Add a new Dropbox bucket
+                dropbox_service_instance = DropboxService(token_dir="tokens", app_key="iekqmer228dhy6r", app_secret="t06d75xw4viyrbu")
+                drive_manager.add_drive(dropbox_service_instance, bucket_number)
+                print(f"Dropbox bucket {bucket_number} added successfully.")
+            else:
+                print("Invalid bucket type. Please choose 1 for Google Drive or 2 for Dropbox.")
+        elif choice == "5":
             print("Thank you for using Syncly!")
             break
         else:
