@@ -105,67 +105,53 @@ class DriveManager:
             print("No authenticated buckets found. Please add a new bucket first.")
             return
 
-        max_files = 100  #Default value
+        max_files = 100  # Default value
         if query:
             print(f"\nSearching for files containing: '{query}' across all buckets...")
-        else:
-            #Ask user for the number of files to retrieve
-            print("\nHow many files would you like to retrieve? (More files take longer to retrieve)")
-            print("1: ~ 50 files")
-            print("2: ~ 100 files")
-            print("3: ~ 500 files")
-            print("4: All available files (Takes much longer)")
-
-            choice = input("Enter a number (1-4): ").strip()
-
-            if choice == "1":
-                max_files = 50
-            elif choice == "2":
-                max_files = 100
-            elif choice == "3":
-                max_files = 500
-            elif choice == "4":
-                max_files = None  # Fetch all files
-                print("\nFetching all available files....")
-            else:
-                print("Invalid choice. Defaulting to 100 files.")
-                max_files = 100
 
         all_files = []
-        seen_files = set()  #Track files to avoid duplicates
+        seen_files = set()
 
-        for bucket in bucket_numbers:
+        for drive in self.drives:
             try:
-                # Use the googleDrive class to authenticate and list files
-                drive = next((d for d in self.drives if isinstance(d, GoogleDrive)), None)
-                if not drive:
-                    print(f"No googleDrive instance found for bucket {bucket}.")
-                    continue
+                if isinstance(drive, DropboxService):
+                    files = drive.listFiles()
+                    for file in files:
+                        file_name = file.name
+                        size = file.size
+                        file_url = f"https://www.dropbox.com/home/{file.path_display}"
+    
+                        if file_name not in seen_files:
+                            all_files.append((file_name, "N/A", "Dropbox File", size, file_url))
+                            seen_files.add(file_name)
 
-                drive.authenticate(bucket)
-                files = drive.listFiles(max_results=max_files, query=query)
-                for file in files:
-                    file_id = file['id']
-                    file_name = file['name']
-                    mime_type = file.get('mimeType', 'Unknown')
-                    size = file.get('size', 'Unknown')
-                    file_url = f"https://drive.google.com/file/d/{file_id}/view"        #Generate Google Drive file URL
+                elif isinstance(drive, GoogleDrive):
+                    files = drive.listFiles(max_results=max_files, query=query)
+                    for file in files:
+                        file_id = file['id']
+                        file_name = file['name']
+                        mime_type = file.get('mimeType', 'Unknown')
+                        size = file.get('size', 'Unknown')
+                        file_url = f"https://drive.google.com/file/d/{file_id}/view"
 
-                    #Check if the file is part of a split file
-                    base_name, part_num = self.parse_part_info(file_name)
-                    if base_name:
-                        if part_num == 0:  #Only include part0
-                            if base_name not in seen_files:  #Avoid duplicates
+                        base_name, part_num = self.parse_part_info(file_name)
+                        if base_name:
+                            if part_num == 0 and base_name not in seen_files:
                                 all_files.append((file_name, file_id, mime_type, size, file_url))
                                 seen_files.add(base_name)
-                    else:
-                        #Include non-split files
-                        all_files.append((file_name, file_id, mime_type, size, file_url))
-            except Exception as e:
-                print(f"Error retrieving files or storage details for bucket {bucket}: {e}")
+                        else:
+                            all_files.append((file_name, file_id, mime_type, size, file_url))
 
-        #Sort files alphabetically by name
+            except Exception as e:
+                print(f"Error retrieving files from {type(drive).__name__}: {e}")
+
+        # Sort and display
         all_files.sort(key=lambda x: x[0])
+        for idx, (name, _, mime_type, size, file_url) in enumerate(all_files, start=1):
+            size_str = f"{float(size) / 1024 ** 2:.2f} MB" if size != 'Unknown' else "Unknown size"
+            print(f"{idx}. {name} ({mime_type}) - {size_str}")
+            print(f"   View file: {file_url}\n")
+
 
         #Pagination
         page_size = 30

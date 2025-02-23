@@ -20,8 +20,8 @@ def setup_drive_manager():
     dropbox_service1 = DropboxService(token_dir="tokens", app_key="w84emdpux17qpnj", app_secret="x6ce7dtmj51xqc7")
     dropbox_service2 = DropboxService(token_dir="tokens", app_key="w84emdpux17qpnj", app_secret="x6ce7dtmj51xqc7")
 
-    drive_manager.add_drive(dropbox_service1, bucket_number=1)
-    drive_manager.add_drive(dropbox_service2, bucket_number=2)
+    drive_manager.add_drive(dropbox_service1, bucket_number=3)
+    drive_manager.add_drive(dropbox_service2, bucket_number=4)
 
     return drive_manager
 

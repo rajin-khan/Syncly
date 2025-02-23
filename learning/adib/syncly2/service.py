@@ -9,7 +9,7 @@ class service(ABC):
         pass
 
     @abstractmethod
-    def list_files(self, max_results: int = None, query: str = None):
+    def listFiles(self, max_results: int = None, query: str = None):
         pass
 
     @abstractmethod

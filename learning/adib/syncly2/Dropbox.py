@@ -184,6 +184,29 @@ class DropboxService:
             logger.error(f"Unexpected error: {e}")
             return 0, 0
     """Use these functions later"""
+    
+    def listFiles(self, folder_path=""):
+        """
+        List all files in a Dropbox folder.
+        """
+        if not self.client:
+            raise ValueError("Dropbox service not authenticated. Call authenticate() first.")
+
+        files = []
+        try:
+            result = self.client.files_list_folder(folder_path)
+            files.extend(result.entries)
+
+            # Handle pagination
+            while result.has_more:
+                result = self.client.files_list_folder_continue(result.cursor)
+                files.extend(result.entries)
+
+            return [file for file in files if isinstance(file, dropbox.files.FileMetadata)]
+        except dropbox.exceptions.ApiError as err:
+            print(f"Dropbox API error: {err}")
+            return []
+
 
     # def get_file_url(self, file_path):
     #     try:
