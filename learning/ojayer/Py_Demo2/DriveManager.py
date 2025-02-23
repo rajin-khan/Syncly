@@ -27,12 +27,12 @@ class DriveManager:
         storage_info = []
         total_limit = 0
         total_usage = 0
-
         for index, drive in enumerate(self.drives):
             limit, usage = drive.check_storage()
             free = limit - usage
-            if free > 0 and isinstance(drive, DropboxService):  # Only include DropboxService instances
-                self.sorted_buckets.append((free, drive))  # Append (free_space, drive) for each Dropbox drive
+            if free > 0 :  
+                self.sorted_buckets.append((free, drive, index))  # Append (free_space, drive) for each Dropbox drive
+                
             total_limit += limit
             total_usage += usage
             storage_info.append({
