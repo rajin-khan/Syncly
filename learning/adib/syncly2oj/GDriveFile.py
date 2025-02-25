@@ -283,7 +283,7 @@ class GoogleDriveFile(FileHandler):
         # Check if the full file exists in any bucket
         for bucket in bucket_numbers:
             try:
-                print(f"Authenticating bucket {bucket}...")
+                # print(f"Authenticating bucket {bucket}...")
                 service = self.google_drive.authenticate(int(bucket))
                 if service is None:
                     print(f"Failed to authenticate bucket {bucket}.")
@@ -296,13 +296,13 @@ class GoogleDriveFile(FileHandler):
                 
                 if files:
                     file_id = files[0]["id"]
-                    print(f"Downloading file from bucket {bucket}...")
+                    # print(f"Downloading file from bucket {bucket}...")
                     downloaded_file = self.download_file(service, file_id, save_path)
                     if downloaded_file:
-                        print(f"Download complete: {downloaded_file}")
+                        # print(f"Download complete: {downloaded_file}")
                         return downloaded_file
-                else:
-                    print(f"File not found in bucket {bucket}.")
+                #else:
+                    # print(f"File not found in bucket {bucket}.")
             except Exception as e:
                 print(f"Error downloading from bucket {bucket}: {e}")
         
@@ -311,7 +311,7 @@ class GoogleDriveFile(FileHandler):
             full_file_name = f"{file_name}{ext}"
             for bucket in bucket_numbers:
                 try:
-                    print(f"Authenticating bucket {bucket} for file {full_file_name}...")
+                    # print(f"Authenticating bucket {bucket} for file {full_file_name}...")
                     service = self.google_drive.authenticate(int(bucket))
                     if service is None:
                         print(f"Failed to authenticate bucket {bucket}.")
@@ -324,17 +324,17 @@ class GoogleDriveFile(FileHandler):
                     
                     if files:
                         file_id = files[0]["id"]
-                        print(f"Downloading file from bucket {bucket}...")
+                        # print(f"Downloading file from bucket {bucket}...")
                         downloaded_file = self.download_file(service, file_id, save_path)
                         if downloaded_file:
-                            print(f"Download complete: {downloaded_file}")
+                            # print(f"Download complete: {downloaded_file}")
                             return downloaded_file
-                    else:
-                        print(f"File not found in bucket {bucket}.")
+                    # else:
+                        # print(f"File not found in bucket {bucket}.")
                 except Exception as e:
                     print(f"Error downloading from bucket {bucket}: {e}")
         
-        print("File not found in any bucket.")
+        # print("File not found in any bucket.")
 
     def search_file(self):
         """Search for files in Google Drive."""

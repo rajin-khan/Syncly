@@ -166,7 +166,7 @@ class DropBoxFile:
             chunk_files = [entry.metadata for entry in result if entry.metadata.name.endswith(".part")]
 
             if not chunk_files:
-                logging.info(f"No chunked files found for '{file_name}'.")
+                #logging.info(f"No chunked files found for '{file_name}'.")
                 return None
 
             chunk_files.sort(key=lambda x: int(re.findall(r'\.part(\d+)', x.name)[-1]))
@@ -175,7 +175,7 @@ class DropBoxFile:
             merged_file_path = os.path.join(save_path, original_filename)
 
             if os.path.exists(merged_file_path):
-                logging.info(f"File {merged_file_path} already exists. Skipping download.")
+                #logging.info(f"File {merged_file_path} already exists. Skipping download.")
                 return merged_file_path
 
             chunk_paths = []
@@ -201,7 +201,7 @@ class DropBoxFile:
                 with open(chunk_path, "rb") as chunk:
                     merged_file.write(chunk.read())
 
-        logging.info(f"Merged file saved at: {merged_file_path}")
+        #logging.info(f"Merged file saved at: {merged_file_path}")
 
     
     def split_and_upload_file(self, file_path, file_name, mimetype, file_size, free_space, metadata):

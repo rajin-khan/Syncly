@@ -7,7 +7,7 @@ from dropbox.exceptions import AuthError, ApiError
 from dropbox.oauth import DropboxOAuth2FlowNoRedirect
 
 # Set up logging
-logging.basicConfig(level=logging.INFO)
+#logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -32,7 +32,7 @@ class DropboxService(Service):
 
         self.bucket_number = bucket_number
         token_path = os.path.join(self.token_dir, f"dropbox_token_{bucket_number}.json")
-        logger.info(f"Authenticating bucket {bucket_number}...")
+        # logger.info(f"Authenticating bucket {bucket_number}...")
 
         # Load existing tokens if they exist
         tokens = self.load_tokens(token_path)
@@ -54,7 +54,7 @@ class DropboxService(Service):
                 oauth_result = auth_flow.finish(auth_code)
                 access_token = oauth_result.access_token
                 refresh_token = oauth_result.refresh_token
-                logger.info("Authentication successful.")
+                # logger.info("Authentication successful.")
             except Exception as e:
                 logger.error(f"Error authenticating: {e}")
                 return None
@@ -72,10 +72,10 @@ class DropboxService(Service):
             )
             # Test the client to ensure the token is valid
             self.client.users_get_current_account()
-            logger.info("Dropbox client initialized successfully.")
+            # logger.info("Dropbox client initialized successfully.")
         except ApiError as e:
             if "expired_access_token" in str(e):
-                logger.info("Access token expired. Refreshing token...")
+                # logger.info("Access token expired. Refreshing token...")
                 try:
                     self.client = dropbox.Dropbox(
                         oauth2_refresh_token=refresh_token,
@@ -84,7 +84,7 @@ class DropboxService(Service):
                     )
                     # Save the new access token
                     self.save_tokens(token_path, self.client._oauth2_access_token, refresh_token)
-                    logger.info("Token refreshed successfully.")
+                    # logger.info("Token refreshed successfully.")
                 except Exception as e:
                     logger.error(f"Error refreshing token: {e}")
                     return None
@@ -111,7 +111,7 @@ class DropboxService(Service):
             try:
                 with open(token_file, "r") as f:
                     tokens = json.load(f)
-                    logger.info(f"Tokens loaded from {token_file}.")
+                    # logger.info(f"Tokens loaded from {token_file}.")
                     return tokens
             except json.JSONDecodeError:
                 logger.error(f"Error: {token_file} is corrupted. Deleting and re-authenticating.")
@@ -140,7 +140,7 @@ class DropboxService(Service):
                 indent=4,
             )
         os.chmod(token_file, 0o600)  # Restrict file permissions
-        logger.info(f"Tokens saved to {token_file}.")
+        # logger.info(f"Tokens saved to {token_file}.")
 
     def check_storage(self):
         """
@@ -157,7 +157,7 @@ class DropboxService(Service):
             usage = self.client.users_get_space_usage()
             allocated = usage.allocation.get_individual().allocated
             used = usage.used
-            logger.info(f"Storage usage: {used} bytes used out of {allocated} bytes allocated.")
+            # logger.info(f"Storage usage: {used} bytes used out of {allocated} bytes allocated.")
             return allocated, used
         except ApiError as e:
             if "rate_limit" in str(e):
