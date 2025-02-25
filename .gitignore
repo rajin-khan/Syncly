@@ -1,3 +1,4 @@
 *.env
 tokens/
 client_secret.json
+credentials.json
