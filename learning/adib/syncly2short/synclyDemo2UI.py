@@ -56,7 +56,28 @@ def main():
     print("=" * 50)
     
     drive_manager = setup_drive_manager()
+    
     while True:
+        # **Check total storage for all services**
+        _, total_limit, total_usage, _ = drive_manager.check_all_storages()
+
+        # **Display total storage info**
+        print("\n" + "=" * 50)
+        print(f"{'💾 STORAGE SUMMARY 💾':^50}")
+        print("=" * 50)
+        print(f"Total Storage: {round(total_limit / 1024**3, 2)} GB")
+        print(f"Used Space: {round(total_usage / 1024**3, 2)} GB")
+        print(f"Free Space: {round((total_limit - total_usage) / 1024**3, 2)} GB")
+
+        # **Display storage as a progress bar**
+        if total_limit > 0:
+            percent_used = (total_usage / total_limit) * 100
+            bar_length = 40
+            filled_length = int(bar_length * percent_used / 100)
+            bar = '█' * filled_length + '░' * (bar_length - filled_length)
+            print(f"[{bar}] {percent_used:.1f}%")
+        
+        # **Display menu**
         print("\n" + "=" * 50)
         print(f"{'SYNCLY MENU':^50}")
         print("=" * 50)
@@ -85,6 +106,7 @@ def main():
         else:
             print("\n❌ Invalid choice. Please enter a number between 1-5.")
             input("\nPress Enter to continue...")
+        
         os.system('cls' if os.name == 'nt' else 'clear')
 
 if __name__ == "__main__":

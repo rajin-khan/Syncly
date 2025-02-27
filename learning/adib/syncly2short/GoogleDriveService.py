@@ -53,10 +53,13 @@ class GoogleDriveService:
         with open(token_path, "w") as token_file:
             token_file.write(creds.to_json())
     
-    def check_storage(self, service):
+    def check_storage(self):
+        """Checks total and used storage in Google Drive."""
+        service = self.authenticate(1)  # Automatically authenticate with first available bucket
         try:
             res = service.about().get(fields='storageQuota').execute()
             return int(res['storageQuota']['limit']), int(res['storageQuota']['usage'])
         except Exception as e:
             print(f"Error checking storage: {e}")
             return 0, 0
+
