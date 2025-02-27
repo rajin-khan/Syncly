@@ -1,14 +1,15 @@
 import os
 import json
 from googleapiclient.http import MediaFileUpload
-from DriveManager import DriveManager
 
 METADATA_FILE = "metadata.json"
 
 class GoogleDriveFile:
-    def __init__(self, drive_manager: DriveManager, google_drive):
+    def __init__(self, drive_manager, google_drive):
+        from drive_manager import DriveManager  # Lazy import to avoid circular import
         self.drive_manager = drive_manager
         self.google_drive = google_drive
+
     
     def upload_file(self, file_path, file_name, mimetype):
         file_size = os.path.getsize(file_path)

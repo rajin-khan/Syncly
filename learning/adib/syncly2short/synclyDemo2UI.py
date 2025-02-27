@@ -1,5 +1,5 @@
 import os
-from DriveManager import DriveManager
+from drive_manager import DriveManager
 from GoogleDriveService import GoogleDriveService
 from GDriveFile import GoogleDriveFile
 from DropboxService import DropboxService

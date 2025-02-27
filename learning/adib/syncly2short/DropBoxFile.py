@@ -3,14 +3,15 @@ import json
 import dropbox
 from dropbox.exceptions import ApiError
 from dropbox.files import WriteMode
-from DriveManager import DriveManager
 
 METADATA_FILE = "metadata.json"
 
 class DropBoxFile:
-    def __init__(self, access_token: str, drive_manager: DriveManager):
+    def __init__(self, access_token: str, drive_manager):
+        from drive_manager import DriveManager  # ✅ Lazy import to avoid circular dependency
         self.dbx = dropbox.Dropbox(access_token)
         self.drive_manager = drive_manager
+
     
     def upload_file(self, file_path, file_name, mimetype="None"):
         file_size = os.path.getsize(file_path)
