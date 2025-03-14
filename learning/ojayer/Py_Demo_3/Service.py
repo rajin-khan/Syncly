@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 class Service(ABC):
     #abstract methods for service classes
     @abstractmethod
-    def authenticate(self, bucket_numer: int):
+    def authenticate(self, bucket_number: int):
         pass
 
     @abstractmethod
