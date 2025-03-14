@@ -5,6 +5,7 @@ from GDriveFile import GoogleDriveFile
 from Dropbox import DropboxService
 from DropBoxFile import DropBoxFile
 from UserReg import UserReg
+from Database import Database
 
 def upload_file(drive_manager):
     #**Get the sorted list of buckets (by free space, descending)**
@@ -105,23 +106,6 @@ def main():
             if user_id:
                 # Initialize the DriveManager with the user_id
                 drive_manager = DriveManager(user_id=user_id, token_dir="tokens")
-
-                # Get the list of authenticated buckets for the user
-                authenticated_buckets = drive_manager.get_all_authenticated_buckets()
-
-                # Load and authenticate only the drives that the user has access to
-                for bucket_number in authenticated_buckets:
-                    try:
-                        bucket_number = int(bucket_number)  # Convert bucket number to integer
-                        drive = drive_manager.drives[bucket_number - 1]  # Get the drive instance
-                        if isinstance(drive, GoogleDrive):
-                            drive.authenticate(bucket_number, user_id)
-                        elif isinstance(drive, DropboxService):
-                            drive.authenticate(bucket_number, user_id)
-                        print(f"Bucket {bucket_number} authenticated successfully.")
-                    except Exception as e:
-                        print(f"Failed to authenticate bucket {bucket_number}: {e}")
-
                 break  # Proceed to the main menu after login
 
         elif choice == "3":
@@ -165,18 +149,29 @@ def main():
             bucket_type = input("Enter bucket type (1: Google Drive, 2: Dropbox): ").strip()
             bucket_number = len(drive_manager.get_all_authenticated_buckets()) + 1
 
-            if bucket_type == "1":
-                # Add a new Google Drive bucket
-                google_drive_instance = GoogleDrive()
-                drive_manager.add_drive(google_drive_instance, bucket_number, drive_type="GoogleDrive")
-                print(f"Google Drive bucket {bucket_number} added successfully.")
-            elif bucket_type == "2":
-                # Add a new Dropbox bucket
-                dropbox_service_instance = DropboxService(token_dir="tokens", app_key="w84emdpux17qpnj", app_secret="x6ce7dtmj51xqc7")
-                drive_manager.add_drive(dropbox_service_instance, bucket_number, drive_type="Dropbox")
-                print(f"Dropbox bucket {bucket_number} added successfully.")
-            else:
-                print("Invalid bucket type. Please choose 1 for Google Drive or 2 for Dropbox.")
+            try:
+                if bucket_type == "1":
+                    # Add a new Google Drive bucket
+                    google_drive_instance = GoogleDrive()
+                    drive_manager.add_drive(google_drive_instance, bucket_number, drive_type="GoogleDrive")
+                    print(f"Google Drive bucket {bucket_number} added successfully.")
+                elif bucket_type == "2":
+                    # Add a new Dropbox bucket
+                    dropbox_service_instance = DropboxService(token_dir="tokens", app_key="w84emdpux17qpnj", app_secret="x6ce7dtmj51xqc7")
+                    drive_manager.add_drive(dropbox_service_instance, bucket_number, drive_type="Dropbox")
+                    print(f"Dropbox bucket {bucket_number} added successfully.")
+                else:
+                    print("Invalid bucket type. Please choose 1 for Google Drive or 2 for Dropbox.")
+
+                # Verify that the drives field is updated in the users_collection
+                db = Database().get_instance()
+                user_data = db.users_collection.find_one({"_id": drive_manager.user_id})  # Use user_id (ObjectId)
+                if user_data and "drives" in user_data:
+                    print(f"Updated drives list: {user_data['drives']}")
+                else:
+                    print("Drives list not updated in the database.")
+            except Exception as e:
+                print(f"Error adding new bucket: {e}")
         elif choice == "5":
             print("Thank you for using Syncly!")
             break
