@@ -16,16 +16,17 @@ class DriveManager:
         self.load_user_drives()
 
     def load_user_drives(self):
-        """
-        Load user-specific drives from the MongoDB database.
-        """
         db = Database().get_instance()
         user_drives = db.drives_collection.find({"user_id": self.user_id})
         for drive in user_drives:
             if drive['type'] == 'GoogleDrive':
-                self.drives.append(GoogleDrive(token_dir=self.token_dir, credentials_file="credentials.json"))
+                gd = GoogleDrive(token_dir=self.token_dir, credentials_file="credentials.json")
+                gd.authenticate(drive['bucket_number'], self.user_id)
+                self.drives.append(gd)
             elif drive['type'] == 'Dropbox':
-                self.drives.append(DropboxService(token_dir=self.token_dir, app_key=drive['app_key'], app_secret=drive['app_secret']))
+                dbx = DropboxService(token_dir=self.token_dir, app_key=drive['app_key'], app_secret=drive['app_secret'])
+                dbx.authenticate(drive['bucket_number'], self.user_id)
+                self.drives.append(dbx)
 
     def add_drive(self, drive: Service, bucket_number, drive_type):
         """
@@ -33,7 +34,6 @@ class DriveManager:
         """
         # Authenticate the drive
         drive.authenticate(bucket_number, self.user_id)
-
         self.drives.append(drive)
         print(f"{type(drive).__name__} added successfully as bucket {bucket_number}.")
 
@@ -46,6 +46,13 @@ class DriveManager:
             "app_key": getattr(drive, 'app_key', None),
             "app_secret": getattr(drive, 'app_secret', None)
         })
+        # Update the user's drives list in MongoDB
+        db.users_collection.update_one(
+            {"_id": self.user_id},  # Use the user_id (ObjectId) to find the correct document
+            {"$addToSet": {"drives": bucket_number}},  # Add the new drive to the drives list
+            upsert=True
+        )
+        
 
     def check_all_storages(self):
         """
