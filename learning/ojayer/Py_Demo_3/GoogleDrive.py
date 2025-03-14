@@ -75,7 +75,12 @@ class GoogleDrive(Service):
                     upsert=True
                 )
                 logger.info("Authentication successful. Token saved to MongoDB.")
-
+                #Update user's drives list in MongoDB
+                self.db.users_collection.update_one(
+                    {"_id": user_id},
+                    {"$addToSet": {"drives": bucket_number}},
+                    upsert=True
+                )
         self.service = build("drive", "v3", credentials=creds)
         return self.service
     
