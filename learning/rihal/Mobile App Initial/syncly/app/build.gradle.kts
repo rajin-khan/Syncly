@@ -56,4 +56,5 @@ dependencies {
     androidTestImplementation(libs.ui.test.junit4)
     debugImplementation(libs.ui.tooling)
     debugImplementation(libs.ui.test.manifest)
+    implementation("org.mongodb:mongodb-driver-sync:4.3.4") //MongoDB Java Driver
 }

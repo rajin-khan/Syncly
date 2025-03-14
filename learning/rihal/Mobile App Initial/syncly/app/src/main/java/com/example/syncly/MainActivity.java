@@ -7,8 +7,8 @@ import android.widget.Button;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
-
     private Button startButton, loginButton;
+    private Database db = Database.getInstance();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
