@@ -46,29 +46,52 @@
         android:paddingLeft="10dp"
         android:paddingRight="10dp"
         android:textColor="@color/black"
-        app:layout_constraintBottom_toTopOf="@+id/password_input"
+        app:layout_constraintBottom_toTopOf="@+id/password_container"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintWidth_percent="0.8"
         app:layout_constraintTop_toBottomOf="@+id/welcome_text" />
 
-    <!-- Password Input -->
-    <EditText
-        android:id="@+id/password_input"
+    <!-- Password Container -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/password_container"
         android:layout_width="0dp"
         android:layout_height="50dp"
-        android:hint="@string/password"
-        android:inputType="textPassword"
-        android:autofillHints="password"
-        android:textColor="@color/black"
-        android:backgroundTint="@color/black"
-        android:paddingLeft="10dp"
-        android:paddingRight="10dp"
-        app:layout_constraintBottom_toTopOf="@+id/btn_login"
+        app:layout_constraintWidth_percent="0.8"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintWidth_percent="0.8"
-        app:layout_constraintTop_toBottomOf="@+id/email_input" />
+        app:layout_constraintTop_toBottomOf="@+id/email_input">
+
+        <!-- Password Input -->
+        <EditText
+            android:id="@+id/password_input"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="10dp"
+            android:hint="@string/password"
+            android:inputType="textPassword"
+            android:autofillHints="password"
+            android:textColor="@color/black"
+            android:backgroundTint="@color/black"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/toggle_password_visibility"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <!-- Password Visibility Toggle -->
+        <ImageView
+            android:id="@+id/toggle_password_visibility"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:src="@drawable/ic_visibility_off"
+            android:contentDescription="@string/toggle_password"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <!-- Login Button -->
     <Button
@@ -83,7 +106,7 @@
         android:textSize="20sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/password_input" />
+        app:layout_constraintTop_toBottomOf="@+id/password_container" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline"
