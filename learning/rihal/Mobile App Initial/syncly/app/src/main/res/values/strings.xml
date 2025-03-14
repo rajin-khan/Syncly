@@ -8,4 +8,10 @@
     <string name="welcome_back">Welcome back.</string>
     <string name="email">Email</string>
     <string name="password">Password</string>
+    <string name="welcome_message">Welcome to Syncly Menu.\n\t\t\t\t\tChoose an option</string>
+    <string name="view_files">View Files</string>
+    <string name="search_files">Search Files</string>
+    <string name="add_bucket">Add New Bucket</string>
+    <string name="upload">Upload Files</string>
+    <string name="exit">Exit</string>
 </resources>
