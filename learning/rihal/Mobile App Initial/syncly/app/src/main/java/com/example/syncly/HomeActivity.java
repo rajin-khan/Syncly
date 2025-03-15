@@ -57,8 +57,9 @@ public class HomeActivity extends AppCompatActivity {
 
         // Exit Button Click Listener
         exitButton.setOnClickListener(v -> {
-            Toast.makeText(HomeActivity.this, "Exiting Application", Toast.LENGTH_SHORT).show();
-            finishAffinity(); // Closes all activities and exits the app
+            //Go back to main screen
+            Intent intent = new Intent(HomeActivity.this, MainActivity.class);
+            startActivity(intent);
         });
     }
 }

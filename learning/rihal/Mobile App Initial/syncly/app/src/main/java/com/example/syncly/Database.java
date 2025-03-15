@@ -46,11 +46,11 @@ public class Database {
         return instance;
     }
 
-    // Getter methods for collections
     // Getter for database
     public MongoDatabase getDatabase() {
         return database;
     }
+    // Getter methods for collections
     public MongoCollection<Document> getUsersCollection() {
         return usersCollection;
     }

@@ -21,4 +21,5 @@
     <string name="choose">CHOOSE A STORAGE OPTION</string>
     <string name="googleDrive">Google Drive</string>
     <string name="dropbox">Dropbox</string>
+    <string name="new_message">New Here? Register Instead</string>
 </resources>
