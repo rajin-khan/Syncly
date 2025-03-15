@@ -99,7 +99,8 @@ class DriveManager:
                     gdrive_file = GoogleDriveFile(self, drive)
                     files = gdrive_file.list_files(query=query)
                 elif isinstance(drive, DropboxService):
-                    dropbox_file = DropBoxFile(drive.authenticate(1), self)  # Fixed: Ensure authentication
+                    access_token = drive.authenticate(1)
+                    dropbox_file = DropBoxFile(access_token, self)
                     files = dropbox_file.list_files(query=query)
 
                 for file in files:

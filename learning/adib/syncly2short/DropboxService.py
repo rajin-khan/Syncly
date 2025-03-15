@@ -18,7 +18,7 @@ class DropboxService:
         
         if tokens:
             self.client = self._init_client(tokens["access_token"], tokens["refresh_token"])
-            return self.client
+            return tokens["access_token"]  # ✅ Return access token instead of client
         
         auth_flow = DropboxOAuth2FlowNoRedirect(self.app_key, self.app_secret)
         authorize_url = auth_flow.start()
@@ -29,11 +29,11 @@ class DropboxService:
             oauth_result = auth_flow.finish(auth_code)
             self.client = self._init_client(oauth_result.access_token, oauth_result.refresh_token)
             self._save_tokens(token_path, oauth_result.access_token, oauth_result.refresh_token)
+            return oauth_result.access_token  # ✅ Return access token
         except Exception as e:
             print(f"Error authenticating: {e}")
             return None
-        
-        return self.client
+
     
     def _init_client(self, access_token, refresh_token):
         try:
