@@ -7,6 +7,7 @@ import os
 import shutil
 from bson import ObjectId
 import logging
+import mimetypes  # Add this import for MIME type detection
 
 from Database import Database
 from DriveManager import DriveManager
@@ -172,9 +173,10 @@ async def add_drive(
 @app.get("/files", response_model=List[FileInfo], tags=["Files"])
 async def list_files(
     query: Optional[str] = None,
+    limit: Optional[int] = Query(10, description="Number of files to retrieve (default: 10)"),
     user_id: ObjectId = Depends(get_user_id)
 ):
-    """List all files from all connected drives with optional search"""
+    """List files from all connected drives with optional search and limit."""
     try:
         drive_manager = DriveManager(user_id=user_id)
         
@@ -195,6 +197,12 @@ async def list_files(
                             "path": file.get("path", "N/A")
                         })
                         seen_files.add(file_name)
+                        
+                        # Stop if we've reached the limit
+                        if len(all_files) >= limit:
+                            break
+                if len(all_files) >= limit:
+                    break
             except Exception as e:
                 logger.error(f"Error retrieving files from {type(drive).__name__}: {e}")
         
@@ -301,10 +309,15 @@ async def download_file(
         downloaded_file = google_drive_file.download_from_all_buckets(file_name, DOWNLOAD_FOLDER)
         
         if downloaded_file:
+            # Determine the MIME type based on the file extension
+            mime_type, _ = mimetypes.guess_type(downloaded_file)
+            if not mime_type:
+                mime_type = "application/octet-stream"  # Fallback for unknown types
+            
             return FileResponse(
                 path=downloaded_file,
                 filename=os.path.basename(downloaded_file),
-                media_type="application/octet-stream"
+                media_type=mime_type
             )
         
         # If not found in Google Drive, try Dropbox
@@ -319,10 +332,15 @@ async def download_file(
                 save_file_path = os.path.join(DOWNLOAD_FOLDER, os.path.basename(dropbox_file_path))
                 dropbox_file.download_file(dropbox_file_path, save_file_path)
                 
+                # Determine the MIME type based on the file extension
+                mime_type, _ = mimetypes.guess_type(save_file_path)
+                if not mime_type:
+                    mime_type = "application/octet-stream"  # Fallback for unknown types
+                
                 return FileResponse(
                     path=save_file_path,
                     filename=os.path.basename(save_file_path),
-                    media_type="application/octet-stream"
+                    media_type=mime_type
                 )
         
         # If file not found anywhere
