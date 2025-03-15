@@ -42,9 +42,9 @@ public class HomeActivity extends AppCompatActivity {
         // Add New Bucket Button Click Listener
         addBucketButton.setOnClickListener(v -> {
             Toast.makeText(HomeActivity.this, "Add New Bucket Clicked", Toast.LENGTH_SHORT).show();
-            // Navigate to AddBucketActivity (To be implemented)
-            // Intent intent = new Intent(HomeActivity.this, AddBucketActivity.class);
-            // startActivity(intent);
+            //Navigate to AddBucketActivity
+            Intent intent = new Intent(HomeActivity.this, AddBucketActivity.class);
+            startActivity(intent);
         });
 
         // Upload Files Button Click Listener

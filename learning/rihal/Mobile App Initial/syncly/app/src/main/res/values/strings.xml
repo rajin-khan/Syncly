@@ -5,10 +5,10 @@
     <string name="login">LOGIN</string>
     <string name="or">or</string>
     <string name="title_activity_main">MainActivity</string>
-    <string name="welcome_back">Welcome back.</string>
+    <string name="welcome_back">WELCOME BACK</string>
     <string name="email">Email</string>
     <string name="password">Password</string>
-    <string name="welcome_message">Welcome to Syncly Menu.\n\t\t\t\t\tChoose an option</string>
+    <string name="welcome_message">WELCOME TO SYNCLY MENU.\n\t\t\t\t\tCHOOSE AN OPTION</string>
     <string name="view_files">View Files</string>
     <string name="search_files">Search Files</string>
     <string name="add_bucket">Add New Bucket</string>
@@ -18,4 +18,7 @@
     <string name="username">Username</string>
     <string name="register_here">Register Here</string>
     <string name="register_button">REGISTER</string>
+    <string name="choose">CHOOSE A STORAGE OPTION</string>
+    <string name="googleDrive">Google Drive</string>
+    <string name="dropbox">Dropbox</string>
 </resources>
