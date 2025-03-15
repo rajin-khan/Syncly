@@ -7,7 +7,7 @@ import os
 import shutil
 from bson import ObjectId
 import logging
-import mimetypes  # Add this import for MIME type detection
+import mimetypes
 
 from Database import Database
 from DriveManager import DriveManager
@@ -18,8 +18,10 @@ from GDriveFile import GoogleDriveFile
 from DropBoxFile import DropBoxFile
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, 
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger("syncly-api")
 
 app = FastAPI(
@@ -158,10 +160,10 @@ async def add_drive(
             return {"status": "success", "message": f"Google Drive bucket {bucket_number} added successfully"}
             
         elif request.drive_type == "Dropbox":
-            # Using app_key and app_secret from your existing code
             dropbox_service_instance = DropboxService(token_dir="tokens", app_key="w84emdpux17qpnj", app_secret="x6ce7dtmj51xqc7")
+            auth_url = dropbox_service_instance.get_auth_url()  # Assuming this method exists
             drive_manager.add_drive(dropbox_service_instance, bucket_number, drive_type="Dropbox")
-            return {"status": "success", "message": f"Dropbox bucket {bucket_number} added successfully"}
+            return {"status": "success", "message": f"Dropbox bucket {bucket_number} added successfully", "auth_url": auth_url}
             
         else:
             raise HTTPException(status_code=400, detail="Invalid drive type. Choose 'GoogleDrive' or 'Dropbox'")
@@ -294,6 +296,11 @@ async def upload_file(
     except Exception as e:
         logger.error(f"Error in upload process: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Upload process failed: {str(e)}")
+    finally:
+        # Ensure the temporary file is cleaned up
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            logger.info(f"Temporary file {file_path} cleaned up.")
 
 @app.get("/files/download", tags=["Files"])
 async def download_file(
