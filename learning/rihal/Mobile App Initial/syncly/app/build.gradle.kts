@@ -10,12 +10,18 @@ android {
 
     defaultConfig {
         applicationId = "com.example.syncly"
-        minSdk = 27
+        minSdk = 21
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    packaging {
+        resources {
+            excludes += "META-INF/native-image/org.mongodb/bson/native-image.properties"
+        }
     }
 
     buildTypes {
@@ -28,8 +34,9 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
+        sourceCompatibility(JavaVersion.VERSION_17)
+        targetCompatibility(JavaVersion.VERSION_17)
     }
     buildFeatures {
         compose = true
@@ -57,4 +64,11 @@ dependencies {
     debugImplementation(libs.ui.tooling)
     debugImplementation(libs.ui.test.manifest)
     implementation("org.mongodb:mongodb-driver-sync:4.3.4") //MongoDB Java Driver
+    //Google Drive Dependencies
+//    implementation("com.google.android.gms:play-services-auth:+")
+//    implementation("com.google.api-client:google-api-client-android:+")
+//    implementation("com.google.apis:google-api-services-drive:+")
+    //Dropbox Dependencies
+    implementation("com.dropbox.core:dropbox-core-sdk:+")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }

@@ -15,4 +15,7 @@
     <string name="upload">Upload Files</string>
     <string name="exit">Exit</string>
     <string name="toggle_password">Toggle Password Visibility</string>
+    <string name="username">Username</string>
+    <string name="register_here">Register Here</string>
+    <string name="register_button">REGISTER</string>
 </resources>

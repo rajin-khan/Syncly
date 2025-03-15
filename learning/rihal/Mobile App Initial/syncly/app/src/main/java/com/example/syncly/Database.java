@@ -5,6 +5,7 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoCollection;
 import org.bson.Document;
+import android.util.Log;
 
 public class Database {
 
@@ -15,11 +16,12 @@ public class Database {
     private MongoCollection<Document> tokensCollection;
     private MongoCollection<Document> metadataCollection;
     private MongoCollection<Document> drivesCollection;
+    private static final String TAG = "MongoDB";
 
     private Database() {
         try {
             // Use MongoClients instead of MongoClient
-            client = MongoClients.create("mongodb://localhost:27017"); // Update with your connection string
+            client = MongoClients.create("mongodb://192.168.0.105:27017");   // Update with your connection string
             database = client.getDatabase("Syncly"); // Correct way to get the database
 
             // Initialize collections
@@ -31,9 +33,9 @@ public class Database {
             // Test the connection
             Document ping = new Document("ping", 1);
             database.runCommand(ping);
-            System.out.println("Connected to MongoDB successfully.");
+            Log.d(TAG, "✅ Connected to MongoDB successfully.");
         } catch (Exception e) {
-            System.err.println("Failed to connect to MongoDB: " + e.getMessage());
+            Log.e(TAG, "❌ Failed to connect to MongoDB: " + e.getMessage());
         }
     }
 
@@ -45,6 +47,10 @@ public class Database {
     }
 
     // Getter methods for collections
+    // Getter for database
+    public MongoDatabase getDatabase() {
+        return database;
+    }
     public MongoCollection<Document> getUsersCollection() {
         return usersCollection;
     }
@@ -65,7 +71,7 @@ public class Database {
     public void closeConnection() {
         if (client != null) {
             client.close();
-            System.out.println("MongoDB connection closed.");
+            Log.e(TAG, "MongoDB connection closed.");
         }
     }
 }

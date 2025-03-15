@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:background="@color/white"
     android:gravity="center"
-    tools:context=".LoginActivity">
+    tools:context=".RegisterActivity">
 
     <!-- Logo Image -->
     <ImageView
@@ -22,20 +22,20 @@
 
     <!-- Welcome Message -->
     <TextView
-        android:id="@+id/welcome_text"
+        android:id="@+id/register_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/welcome_back"
+        android:text="@string/register_here"
         android:textSize="20sp"
         android:textColor="@color/black"
-        app:layout_constraintBottom_toTopOf="@+id/username_input"
+        app:layout_constraintBottom_toTopOf="@+id/username_input_register"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/logo" />
 
     <!-- Username Input -->
     <EditText
-        android:id="@+id/username_input"
+        android:id="@+id/username_input_register"
         android:layout_width="0dp"
         android:layout_height="50dp"
         android:layout_marginTop="30dp"
@@ -49,7 +49,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintWidth_percent="0.8"
-        app:layout_constraintTop_toBottomOf="@+id/welcome_text" />
+        app:layout_constraintTop_toBottomOf="@+id/register_text" />
 
     <!-- Password Container -->
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -59,7 +59,7 @@
         app:layout_constraintWidth_percent="0.8"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/username_input">
+        app:layout_constraintTop_toBottomOf="@+id/username_input_register">
 
         <!-- Password Input -->
         <EditText
@@ -92,14 +92,14 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Login Button -->
+    <!-- Register Button -->
     <Button
-        android:id="@+id/btn_login"
+        android:id="@+id/btn_register"
         android:layout_width="262dp"
         android:layout_height="65dp"
         android:layout_marginTop="50dp"
         android:background="@drawable/rounded_button"
-        android:text="@string/login"
+        android:text="@string/register_button"
         android:textAllCaps="true"
         android:textColor="@color/white"
         android:textSize="20sp"

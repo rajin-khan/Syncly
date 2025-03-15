@@ -13,7 +13,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class LoginActivity extends AppCompatActivity {
 
-    private EditText emailInput, passwordInput;
+    private EditText usernameInput, passwordInput;
     private ImageView togglePasswordVisibility;
     private Button loginButton;
     private boolean isPasswordVisible = false; // Default state (hidden)
@@ -23,8 +23,7 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        // Initialize UI components
-        emailInput = findViewById(R.id.email_input);
+        usernameInput = findViewById(R.id.username_input);
         passwordInput = findViewById(R.id.password_input);
         togglePasswordVisibility = findViewById(R.id.toggle_password_visibility);
         loginButton = findViewById(R.id.btn_login);
@@ -46,20 +45,17 @@ public class LoginActivity extends AppCompatActivity {
 
         // Set login button click listener
         loginButton.setOnClickListener(v -> {
-            String email = emailInput.getText().toString().trim();
+            String username = usernameInput.getText().toString().trim();
             String password = passwordInput.getText().toString().trim();
 
-            if (email.isEmpty() || password.isEmpty()) {
-                Toast.makeText(LoginActivity.this, "Please enter both email and password", Toast.LENGTH_SHORT).show();
+            if (username.isEmpty() || password.isEmpty()) {
+                Toast.makeText(LoginActivity.this, "Please enter both username and password", Toast.LENGTH_SHORT).show();
             } else {
-                if (email.equals("test@example.com") && password.equals("password123")) {
+                if (username.equals("testuser") && password.equals("password123")) {
                     Toast.makeText(LoginActivity.this, "Login Successful!", Toast.LENGTH_SHORT).show();
-                    // Navigate to HomeActivity after successful login
-                    Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
-                    startActivity(intent);
-                    finish(); // Close the LoginActivity so user can't go back
+                    // Implement navigation to HomeActivity
                 } else {
-                    Toast.makeText(LoginActivity.this, "Invalid email or password", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(LoginActivity.this, "Invalid username or password", Toast.LENGTH_SHORT).show();
                 }
             }
         });
