@@ -54,11 +54,31 @@ public class DropboxService extends Service {
                     try {
                         creds = new DbxCredential(
                                 tokenData.getString("access_token"),
-                                null,
+                                tokenData.getLong("expireAt"),
                                 tokenData.getString("refresh_token"),
                                 appKey,
                                 appSecret
                         );
+
+                        // Check if the token has expired
+                        if (creds.getExpiresAt() < System.currentTimeMillis()) {
+                            // Refresh the token
+                            DbxRequestConfig config = DbxRequestConfig.newBuilder("Syncly").build();
+                            creds.refresh(config); // Refresh the token using DbxRequestConfig
+                            Log.i(TAG, "Dropbox token refreshed successfully.");
+
+                            // Update the tokens in the database after refreshing
+                            db.getTokensCollection().updateOne(
+                                    new Document("user_id", userId).append("bucket_number", bucketNumber),
+                                    new Document("$set", new Document()
+                                            .append("access_token", creds.getAccessToken())
+                                            .append("refresh_token", creds.getRefreshToken())
+                                            .append("expireAt", creds.getExpiresAt())),
+                                    new UpdateOptions().upsert(true)
+                            );
+                            Log.i(TAG, "Updated Dropbox tokens in MongoDB after refresh.");
+                        }
+
                         service = new DbxClientV2(DbxRequestConfig.newBuilder("Syncly").build(), creds);
                         service.users().getCurrentAccount();
                         Log.i(TAG, "Dropbox client initialized successfully with existing token.");
@@ -70,17 +90,21 @@ public class DropboxService extends Service {
 
                 if (creds == null || service == null) {
                     Log.i(TAG, "No valid token found. Perform OAuth flow externally and provide tokens.");
+                    // TODO: Implement OAuth flow to get access token, refresh token, and expiration time
                     String accessToken = "your_access_token_here"; // Replace with real token from OAuth
                     String refreshToken = "your_refresh_token_here"; // Replace with real token from OAuth
+                    long expireAt = System.currentTimeMillis() + (3600 * 1000); // Token expires in 1 hour
 
-                    creds = new DbxCredential(accessToken, null, refreshToken, appKey, appSecret);
+                    creds = new DbxCredential(accessToken, expireAt, refreshToken, appKey, appSecret);
                     service = new DbxClientV2(DbxRequestConfig.newBuilder("Syncly").build(), creds);
 
+                    // Store the tokens in the database
                     db.getTokensCollection().updateOne(
                             new Document("user_id", userId).append("bucket_number", bucketNumber),
                             new Document("$set", new Document()
                                     .append("access_token", accessToken)
                                     .append("refresh_token", refreshToken)
+                                    .append("expireAt", expireAt)
                                     .append("app_key", appKey)
                                     .append("app_secret", appSecret)),
                             new UpdateOptions().upsert(true)
@@ -101,7 +125,6 @@ public class DropboxService extends Service {
             }
         });
     }
-
     @Override
     public void listFiles(final Integer maxResults, final String query, final ListFilesCallback callback) {
         executor.execute(() -> {
