@@ -220,15 +220,34 @@ async def upload_file(
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
         
-        # Get drive manager
-        drive_manager = DriveManager(user_id=obj_id)
+        # Initialize DriveManager with the correct user_id and token_dir
+        drive_manager = DriveManager(user_id=obj_id, token_dir="tokens")
+        
+        # Check if drives are authenticated
+        authenticated_buckets = drive_manager.get_all_authenticated_buckets()
+        if not authenticated_buckets:
+            os.remove(file_path)  # Clean up temp file
+            raise HTTPException(status_code=400, detail="No authenticated drives found. Please add a drive first.")
+        
+        # Log authenticated buckets
+        logger.info(f"Authenticated buckets: {authenticated_buckets}")
+        
+        # Get storage information for all drives
+        storages_info, total_limit, total_usage = drive_manager.check_all_storages()
+        logger.info(f"Storage information: {storages_info}")
+        
+        # Get sorted buckets (drives with free space)
         sorted_buckets = drive_manager.get_sorted_buckets()
+        logger.info(f"Sorted buckets: {sorted_buckets}")
         
         if not sorted_buckets:
+            os.remove(file_path)  # Clean up temp file
             raise HTTPException(status_code=400, detail="No available storage with free space")
         
-        best_bucket = sorted_buckets[0][1]  # Get the drive instance with most free space
+        # Select the best bucket (drive with the most free space)
+        best_bucket = sorted_buckets[0][1]  # Get the drive instance
         bucket_number = sorted_buckets[0][2]  # Get the bucket number
+        logger.info(f"Selected best bucket: {type(best_bucket).__name__} (Bucket {bucket_number})")
         
         # Upload to the best available storage
         try:
@@ -244,6 +263,7 @@ async def upload_file(
                 provider = "Google Drive"
                 
             else:
+                os.remove(file_path)  # Clean up temp file
                 raise HTTPException(status_code=400, detail=f"Unsupported drive type: {type(best_bucket).__name__}")
                 
             # Clean up temp file
