@@ -15,6 +15,9 @@ public class HomeActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home); // Linking the layout
+        // Retrieve userId from LoginActivity
+        String userId = getIntent().getStringExtra("userId");
+
 
         // Initialize buttons
         viewFilesButton = findViewById(R.id.btn_view_files);
@@ -22,6 +25,7 @@ public class HomeActivity extends AppCompatActivity {
         addBucketButton = findViewById(R.id.btn_add_bucket);
         uploadFilesButton = findViewById(R.id.btn_upload_files);
         exitButton = findViewById(R.id.btn_exit);
+
 
         // View Files Button Click Listener
         viewFilesButton.setOnClickListener(v -> {
@@ -41,24 +45,33 @@ public class HomeActivity extends AppCompatActivity {
 
         // Add New Bucket Button Click Listener
         addBucketButton.setOnClickListener(v -> {
-            Toast.makeText(HomeActivity.this, "Add New Bucket Clicked", Toast.LENGTH_SHORT).show();
-            //Navigate to AddBucketActivity
+            // Navigate to AddBucketActivity and pass the userId
             Intent intent = new Intent(HomeActivity.this, AddBucketActivity.class);
+            intent.putExtra("userId", userId); // Pass userId to AddBucketActivity
             startActivity(intent);
         });
 
         // Upload Files Button Click Listener
         uploadFilesButton.setOnClickListener(v -> {
-            Toast.makeText(HomeActivity.this, "Upload Files Clicked", Toast.LENGTH_SHORT).show();
-            // Navigate to UploadFilesActivity (To be implemented)
-            // Intent intent = new Intent(HomeActivity.this, UploadFilesActivity.class);
-            // startActivity(intent);
+            // Retrieve saved Google account
+            String googleAccount = getSharedPreferences("SynclyPrefs", MODE_PRIVATE)
+                    .getString("google_account_email", null);
+
+            if (googleAccount == null) {
+                Toast.makeText(HomeActivity.this, "No Google Account found. Please reauthenticate.", Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            // Navigate to UploadFilesActivity and pass the Google account email
+            Intent intent = new Intent(HomeActivity.this, UploadFilesActivity.class);
+            intent.putExtra("userId", googleAccount);
+            startActivity(intent);
         });
 
         // Exit Button Click Listener
         exitButton.setOnClickListener(v -> {
-            //Go back to main screen
-            Intent intent = new Intent(HomeActivity.this, MainActivity.class);
+            Toast.makeText(HomeActivity.this, "Logging Out", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(HomeActivity.this, LoginActivity.class);     //Returning to Login screen
             startActivity(intent);
         });
     }

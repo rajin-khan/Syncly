@@ -5,10 +5,8 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoCollection;
 import org.bson.Document;
-import android.util.Log;
 
 public class Database {
-
     private static Database instance;
     private MongoClient client;
     private MongoDatabase database;
@@ -16,62 +14,74 @@ public class Database {
     private MongoCollection<Document> tokensCollection;
     private MongoCollection<Document> metadataCollection;
     private MongoCollection<Document> drivesCollection;
-    private static final String TAG = "MongoDB";
+    private boolean isInitialized = false;
 
-    private Database() {
+    private Database() {}
+
+    public static Database getInstance() {
+        if (instance == null) {
+            synchronized (Database.class) {
+                if (instance == null) {
+                    instance = new Database();
+                }
+            }
+        }
+        return instance;
+    }
+
+    public synchronized void initialize() {
+        if (isInitialized) return;
         try {
-            // Use MongoClients instead of MongoClient
-            client = MongoClients.create("mongodb://192.168.0.105:27017");   // Update with your connection string
-            database = client.getDatabase("Syncly"); // Correct way to get the database
+            // Use 10.0.2.2 for emulator access to localhost
+            client = MongoClients.create("mongodb://10.0.2.2:27017/?connectTimeoutMS=30000&socketTimeoutMS=30000");
+            database = client.getDatabase("Syncly");
 
-            // Initialize collections
             usersCollection = database.getCollection("users");
             tokensCollection = database.getCollection("tokens");
             metadataCollection = database.getCollection("metadata");
             drivesCollection = database.getCollection("drives");
 
-            // Test the connection
             Document ping = new Document("ping", 1);
-            database.runCommand(ping);
-            Log.d(TAG, "✅ Connected to MongoDB successfully.");
+            Document result = database.runCommand(ping);
+            System.out.println("Connected to MongoDB successfully. Ping result: " + result.toJson());
+            isInitialized = true;
         } catch (Exception e) {
-            Log.e(TAG, "❌ Failed to connect to MongoDB: " + e.getMessage());
+            System.err.println("Failed to connect to MongoDB: " + e.getMessage());
+            e.printStackTrace();
+            isInitialized = false;
+            throw e;
         }
     }
 
-    public static Database getInstance() {
-        if (instance == null) {
-            instance = new Database();
-        }
-        return instance;
+    public boolean isInitialized() {
+        return isInitialized;
     }
 
-    // Getter for database
-    public MongoDatabase getDatabase() {
-        return database;
-    }
-    // Getter methods for collections
     public MongoCollection<Document> getUsersCollection() {
+        if (!isInitialized) initialize();
         return usersCollection;
     }
 
     public MongoCollection<Document> getTokensCollection() {
+        if (!isInitialized) initialize();
         return tokensCollection;
     }
 
     public MongoCollection<Document> getMetadataCollection() {
+        if (!isInitialized) initialize();
         return metadataCollection;
     }
 
     public MongoCollection<Document> getDrivesCollection() {
+        if (!isInitialized) initialize();
         return drivesCollection;
     }
 
-    // Close the MongoDB connection
     public void closeConnection() {
         if (client != null) {
             client.close();
-            Log.e(TAG, "MongoDB connection closed.");
+            System.out.println("MongoDB connection closed.");
+            isInitialized = false;
         }
     }
 }

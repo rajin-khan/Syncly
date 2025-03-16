@@ -11,13 +11,13 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 import org.bson.types.BasicBSONList;
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
 
 public class RegisterActivity extends AppCompatActivity {
 
@@ -72,8 +72,7 @@ public class RegisterActivity extends AppCompatActivity {
             String password = params[1];
 
             try {
-                MongoDatabase database = Database.getInstance().getDatabase();
-                MongoCollection<Document> usersCollection = database.getCollection("users");
+                MongoCollection<Document> usersCollection = Database.getInstance().getUsersCollection();
 
                 // Check if username already exists
                 Document existingUser = usersCollection.find(new Document("username", username)).first();

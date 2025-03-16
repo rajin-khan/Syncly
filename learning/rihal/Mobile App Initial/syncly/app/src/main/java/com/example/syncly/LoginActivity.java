@@ -14,7 +14,6 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 
 import java.security.MessageDigest;
@@ -75,8 +74,7 @@ public class LoginActivity extends AppCompatActivity {
             String password = params[1];
 
             try {
-                MongoDatabase database = Database.getInstance().getDatabase();
-                MongoCollection<Document> usersCollection = database.getCollection("users");
+                MongoCollection<Document> usersCollection = Database.getInstance().getUsersCollection();
 
                 // Find the user in the database
                 Document user = usersCollection.find(new Document("username", username)).first();
@@ -113,6 +111,7 @@ public class LoginActivity extends AppCompatActivity {
             if (success) {
                 Toast.makeText(LoginActivity.this, "Login successful", Toast.LENGTH_SHORT).show();
                 Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
+                intent.putExtra("userId", username); // Pass the userId to HomeActivity
                 startActivity(intent);
                 finish();
             } else {
