@@ -40,7 +40,7 @@ async def start(update: Update, context: CallbackContext) -> None:
         "/register <username> <password> - Register a new account\n"
         "/add_drive <drive_type> - Add a new drive (GoogleDrive or Dropbox)\n"
         "/list - List your files\n"
-        "/download <file_name> - Download a file"
+        #"/download <file_name> - Download a file"
     )
 
 async def register(update: Update, context: CallbackContext) -> None:

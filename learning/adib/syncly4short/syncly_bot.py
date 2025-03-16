@@ -7,7 +7,7 @@ import mimetypes
 import re
 
 # Replace with your BotFather Token
-TOKEN = "7840092563:AAE5GREtDI5rQj4IxWj9mlPG9lldY5vbJT0"
+TOKEN = "7728489108:AAEARmLHOsCUTBpGEZ03-Ol53SNLKTPcROI"
 
 # Syncly API URL
 API_BASE_URL = "http://127.0.0.1:8000"
@@ -29,13 +29,14 @@ def sanitize_filename(filename: str) -> str:
 async def start(update: Update, context: CallbackContext) -> None:
     logger.info(f"Received /start command from user: {update.message.from_user.username}")
     await update.message.reply_text(
-        "Welcome to Syncly Bot! Use the following commands:\n"
-        "/login <username> <password> - Log in to your account\n"
-        "/register <username> <password> - Register a new account\n"
-        "/add_drive <drive_type> - Add a new drive (GoogleDrive or Dropbox)\n"
+        "Hi! I'm the Syncly Bot. My commands are:\n"
+        "/login <username> <password> : Log in to your account (if not registered)\n"
+        "/register <username> <password> : Register a new account\n"
+        "/addbucket <bucket_type> : Add a new storage bucket (GoogleDrive or Dropbox)\n"
+        "/storage - View Total Storage Information\n"
         "/list - List your files\n"
-        "/upload - Upload a file (send a file with this command)\n"
-        "/download <file_name> - Download a file"
+        "/upload - Just sent a file from your Phone's File Explorer (or Drag and Drop on Desktop)\n"
+        #"/download <file_name> - Download a file"
     )
 
 async def register(update: Update, context: CallbackContext) -> None:
@@ -151,7 +152,7 @@ async def list_files(update: Update, context: CallbackContext) -> None:
             file_list = "\n".join([f"📄 {file['name']} ({file['provider']})" for file in files])
             await update.message.reply_text(f"📂 Your Files (First {limit}):\n{file_list}")
         else:
-            await update.message.reply_text("📂 No files found.")
+            await update.message.reply_text("📂 No files found. Add a bucket first (after logging in).")
     except requests.exceptions.RequestException as e:
         logger.error(f"Failed to retrieve files for user {user_id}: {e}")
         await update.message.reply_text("❌ Failed to retrieve files.")
@@ -229,6 +230,41 @@ async def download_file(update: Update, context: CallbackContext) -> None:
 
     # Log the file path for debugging
     logger.info(f"File saved at: {file_path}")
+    
+async def storage_info(update: Update, context: CallbackContext) -> None:
+    """Retrieves and displays storage information for the user."""
+    user_id = context.user_data.get("user_id")
+    if not user_id:
+        await update.message.reply_text("❌ Please login first using /login.")
+        return
+
+    logger.info(f"Fetching storage info for user: {user_id}")
+    try:
+        # Call the API to get storage information
+        response = requests.get(f"{API_BASE_URL}/storage", params={"user_id": user_id})
+        response.raise_for_status()  # Raise an exception for HTTP errors
+        
+        # Parse the API response
+        storage_data = response.json()
+        logger.info(f"API Response: {storage_data}")
+        
+        # Extract storage details
+        total_storage = storage_data["total_storage_gb"]
+        used_storage = storage_data["used_storage_gb"]
+        free_storage = storage_data["free_storage_gb"]
+        
+        # Format the message
+        message = (
+            f"🗂️ **Storage Information**\n"
+            f"Total Storage: {total_storage:.2f} GB\n"
+            f"Used Storage: {used_storage:.2f} GB\n"
+            f"Free Storage: {free_storage:.2f} GB"
+        )
+        
+        await update.message.reply_text(message, parse_mode="Markdown")
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Failed to retrieve storage info for user {user_id}: {e}")
+        await update.message.reply_text("❌ Failed to retrieve storage information.")
 
 def main():
     """Start the bot."""
@@ -238,9 +274,10 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("register", register))
     app.add_handler(CommandHandler("login", login))
-    app.add_handler(CommandHandler("add_drive", add_drive))
+    app.add_handler(CommandHandler("addbucket", add_drive))
     app.add_handler(CommandHandler("list", list_files))
     app.add_handler(CommandHandler("download", download_file))
+    app.add_handler(CommandHandler("storage", storage_info))  # Add the new command
     app.add_handler(MessageHandler(filters.Document.ALL, upload_file))
 
     print("🤖 Bot is running...")
