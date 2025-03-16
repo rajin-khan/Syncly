@@ -1,6 +1,7 @@
 package com.example.syncly;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -14,6 +15,7 @@ import java.util.List;
 public class AddBucketActivity extends AppCompatActivity {
     private static final String TAG = "AddBucketActivity";
     private static final int REQUEST_GOOGLE_DRIVE_ACCOUNT = 200;
+    private static final int REQUEST_DROPBOX_ACCOUNT = 300;
     private String userId;
     private DriveManager driveManager;
     private Button btnGoogleDrive, btnDropbox;
@@ -43,9 +45,10 @@ public class AddBucketActivity extends AppCompatActivity {
             startActivityForResult(intent, REQUEST_GOOGLE_DRIVE_ACCOUNT);
         });
 
-        // Dropbox button click listener (Remains unchanged for now)
+        // Dropbox button click listener
         btnDropbox.setOnClickListener(v -> {
-            authenticateDrive("Dropbox");
+            Intent intent = new Intent(AddBucketActivity.this, DropboxAccountActivity.class);
+            startActivityForResult(intent, REQUEST_DROPBOX_ACCOUNT);
         });
     }
 
@@ -60,6 +63,15 @@ public class AddBucketActivity extends AppCompatActivity {
                 Log.d(TAG, "Added Account: " + selectedAccount);
                 // You can now proceed to authenticate and store this account in your system.
                 authenticateDrive("Google Drive");
+            }
+        }
+
+        if (requestCode == REQUEST_DROPBOX_ACCOUNT && resultCode == RESULT_OK && data != null) {
+            String dropboxAccessToken = data.getStringExtra("dropboxAccessToken");
+            if (dropboxAccessToken != null) {
+                Toast.makeText(this, "Dropbox Account Linked!", Toast.LENGTH_LONG).show();
+                Log.d(TAG, "Added Dropbox Account: " + dropboxAccessToken);
+                authenticateDrive("Dropbox");
             }
         }
     }

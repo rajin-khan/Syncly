@@ -78,6 +78,8 @@ dependencies {
     implementation("com.google.apis:google-api-services-drive:v3-rev20230822-2.0.0")
     implementation("org.mongodb:mongodb-driver-sync:4.3.4")
     implementation("com.dropbox.core:dropbox-core-sdk:7.0.0") // Check for the latest version
+    /*implementation("com.dropbox.core:dropbox-core-sdk:5.4.3")   //Older version for .android.Auth
+    implementation("com.dropbox.core:dropbox-android-sdk:3.1.0")*/
     implementation("org.slf4j:slf4j-api:1.7.36")
     implementation("org.slf4j:slf4j-simple:1.7.36")
 }

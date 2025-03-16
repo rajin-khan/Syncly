@@ -21,10 +21,11 @@
     <string name="choose">CHOOSE A STORAGE OPTION</string>
     <string name="googleDrive">Google Drive</string>
     <string name="dropbox">Dropbox</string>
-    <string name="dropbox_app_key">w84emdpux17qpnj</string>
-    <string name="dropbox_app_secret">x6ce7dtmj51xqc7</string>
+    <string name="dropbox_app_key">iekqmer228dhy6r</string>
+    <string name="dropbox_app_secret">t06d75xw4viyrbu</string>
     <string name="choose_account">Choose Your Account</string>
     <string name="choose_gdrive_account">Choose your Google Drive account</string>
+    <string name="choose_db_account">Choose your Dropbox account</string>
     <string name="select_file">Select File to Upload</string>
     <string name="choose_file">Choose File ⬆️</string>
     <string name="no_file_selected">No File Selected</string>

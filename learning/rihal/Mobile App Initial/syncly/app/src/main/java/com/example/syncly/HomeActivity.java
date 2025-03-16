@@ -51,20 +51,22 @@ public class HomeActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        // Upload Files Button Click Listener
         uploadFilesButton.setOnClickListener(v -> {
-            // Retrieve saved Google account
+            // Retrieve saved Google and Dropbox accounts
             String googleAccount = getSharedPreferences("SynclyPrefs", MODE_PRIVATE)
                     .getString("google_account_email", null);
+            String dropboxAccessToken = getSharedPreferences("SynclyPrefs", MODE_PRIVATE)
+                    .getString("dropbox_access_token", null);
 
-            if (googleAccount == null) {
-                Toast.makeText(HomeActivity.this, "No Google Account found. Please reauthenticate.", Toast.LENGTH_LONG).show();
+            if (googleAccount == null && dropboxAccessToken == null) {
+                Toast.makeText(HomeActivity.this, "No Cloud Account Found. Please Authenticate.", Toast.LENGTH_LONG).show();
                 return;
             }
 
-            // Navigate to UploadFilesActivity and pass the Google account email
+            // Navigate to UploadFilesActivity
             Intent intent = new Intent(HomeActivity.this, UploadFilesActivity.class);
             intent.putExtra("userId", googleAccount);
+            intent.putExtra("dropboxAccessToken", dropboxAccessToken);
             startActivity(intent);
         });
 
