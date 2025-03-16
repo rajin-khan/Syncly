@@ -21,8 +21,8 @@
     <string name="choose">CHOOSE A STORAGE OPTION</string>
     <string name="googleDrive">Google Drive</string>
     <string name="dropbox">Dropbox</string>
-    <string name="dropbox_app_key">iekqmer228dhy6r</string>
-    <string name="dropbox_app_secret">t06d75xw4viyrbu</string>
+    <string name="dropbox_app_key">f6dtaq144frn9t1</string>
+    <string name="dropbox_app_secret">lmnfzl4l80z4dxw</string>
     <string name="choose_account">Choose Your Account</string>
     <string name="choose_gdrive_account">Choose your Google Drive account</string>
     <string name="choose_db_account">Choose your Dropbox account</string>
