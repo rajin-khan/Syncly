@@ -5,18 +5,12 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 import os
 import mimetypes
 import re
-import dropbox  # Import Dropbox SDK
 
 # Replace with your BotFather Token
 TOKEN = "7840092563:AAE5GREtDI5rQj4IxWj9mlPG9lldY5vbJT0"
 
 # Syncly API URL
 API_BASE_URL = "http://127.0.0.1:8000"
-
-# Dropbox App Credentials
-DROPBOX_APP_KEY = "w84emdpux17qpnj"
-DROPBOX_APP_SECRET = "x6ce7dtmj51xqc7"
-DROPBOX_REDIRECT_URI = "https://your-redirect-uri.com"  # Replace with your redirect URI
 
 # Configure logging
 logging.basicConfig(
@@ -40,6 +34,7 @@ async def start(update: Update, context: CallbackContext) -> None:
         "/register <username> <password> - Register a new account\n"
         "/add_drive <drive_type> - Add a new drive (GoogleDrive or Dropbox)\n"
         "/list - List your files\n"
+        "/upload - Upload a file (send a file with this command)\n"
         "/download <file_name> - Download a file"
     )
 
@@ -91,7 +86,7 @@ async def login(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text(f"✅ Login successful!\nUser ID: `{user_id}`", parse_mode="Markdown")
 
 async def add_drive(update: Update, context: CallbackContext) -> None:
-    """Adds a new drive and forwards the OAuth authorization link for Dropbox to the user."""
+    """Adds a new drive (GoogleDrive or Dropbox)."""
     user_id = context.user_data.get("user_id")
     if not user_id:
         await update.message.reply_text("❌ Please login first using /login.")
@@ -108,78 +103,21 @@ async def add_drive(update: Update, context: CallbackContext) -> None:
 
     logger.info(f"Attempting to add drive: {drive_type} for user: {user_id}")
     
-    if drive_type == "Dropbox":
-        # Generate OAuth URL for Dropbox
-        auth_flow = dropbox.DropboxOAuth2FlowNoRedirect(DROPBOX_APP_KEY, DROPBOX_APP_SECRET)
-        authorize_url = auth_flow.start()
-        
-        # Store the CSRF token in user_data for later verification
-        context.user_data["dropbox_csrf_token"] = auth_flow._csrf_token
-        
-        # Send the OAuth URL to the user
-        await update.message.reply_text(
-            f"✅ Please authorize the app by visiting this link:\n{authorize_url}\n"
-            f"After authorization, use /auth_dropbox <code> to complete the process."
+    try:
+        # Send a request to the API to add the drive
+        response = requests.post(
+            f"{API_BASE_URL}/drives",
+            json={"drive_type": drive_type},
+            params={"user_id": user_id}
         )
-    else:
-        # Handle Google Drive
-        try:
-            response = requests.post(
-                f"{API_BASE_URL}/drives",
-                json={"drive_type": drive_type},
-                params={"user_id": user_id}
-            )
-            response.raise_for_status()  # Raise an exception for HTTP errors
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Failed to add drive for user {user_id}: {e}")
-            await update.message.reply_text("❌ Failed to add drive. Please try again.")
-            return
+        response.raise_for_status()  # Raise an exception for HTTP errors
         
         drive_data = response.json()
         logger.info(f"Drive added successfully: {drive_data}")
-        await update.message.reply_text(f"✅ Google Drive added successfully!\n{drive_data['message']}")
-
-async def auth_dropbox(update: Update, context: CallbackContext) -> None:
-    """Handles the OAuth callback for Dropbox."""
-    user_id = context.user_data.get("user_id")
-    if not user_id:
-        await update.message.reply_text("❌ Please login first using /login.")
-        return
-    
-    if len(context.args) < 1:
-        await update.message.reply_text("Usage: /auth_dropbox <code>")
-        return
-    
-    auth_code = context.args[0]
-    csrf_token = context.user_data.get("dropbox_csrf_token")
-    
-    if not csrf_token:
-        await update.message.reply_text("❌ OAuth session expired. Please start over.")
-        return
-    
-    # Complete the OAuth flow
-    auth_flow = dropbox.DropboxOAuth2FlowNoRedirect(DROPBOX_APP_KEY, DROPBOX_APP_SECRET)
-    try:
-        access_token, _ = auth_flow.finish(auth_code)
-    except Exception as e:
-        logger.error(f"Failed to retrieve Dropbox access token: {e}")
-        await update.message.reply_text("❌ Failed to authorize Dropbox. Please try again.")
-        return
-    
-    # Store the access token in the API
-    try:
-        response = requests.post(
-            f"{API_BASE_URL}/drives",
-            json={"drive_type": "Dropbox", "access_token": access_token},
-            params={"user_id": user_id}
-        )
-        response.raise_for_status()
+        await update.message.reply_text(f"✅ {drive_type} added successfully!\n{drive_data['message']}")
     except requests.exceptions.RequestException as e:
-        logger.error(f"Failed to add Dropbox drive for user {user_id}: {e}")
-        await update.message.reply_text("❌ Failed to add Dropbox drive. Please try again.")
-        return
-    
-    await update.message.reply_text("✅ Dropbox drive added successfully!")
+        logger.error(f"Failed to add drive for user {user_id}: {e}")
+        await update.message.reply_text("❌ Failed to add drive. Please try again.")
 
 async def list_files(update: Update, context: CallbackContext) -> None:
     """Lists stored files with an optional limit."""
@@ -301,7 +239,6 @@ def main():
     app.add_handler(CommandHandler("register", register))
     app.add_handler(CommandHandler("login", login))
     app.add_handler(CommandHandler("add_drive", add_drive))
-    app.add_handler(CommandHandler("auth_dropbox", auth_dropbox))
     app.add_handler(CommandHandler("list", list_files))
     app.add_handler(CommandHandler("download", download_file))
     app.add_handler(MessageHandler(filters.Document.ALL, upload_file))

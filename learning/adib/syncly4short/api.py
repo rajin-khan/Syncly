@@ -8,7 +8,8 @@ import shutil
 from bson import ObjectId
 import logging
 import mimetypes
-import hashlib  # Add this import
+import hashlib
+import dropbox
 
 from Database import Database
 from DriveManager import DriveManager
@@ -179,10 +180,31 @@ async def add_drive(
             return {"status": "success", "message": f"Google Drive bucket {bucket_number} added successfully"}
             
         elif request.drive_type == "Dropbox":
+            # Initialize DropboxService with app credentials
             dropbox_service_instance = DropboxService(token_dir="tokens", app_key="w84emdpux17qpnj", app_secret="x6ce7dtmj51xqc7")
-            auth_url = dropbox_service_instance.get_auth_url()  # Assuming this method exists
+            
+            # Start the OAuth flow (no redirect, server handles it)
+            auth_flow = dropbox.DropboxOAuth2FlowNoRedirect(dropbox_service_instance.app_key, dropbox_service_instance.app_secret)
+            authorize_url = auth_flow.start()
+            
+            # Automatically complete the OAuth flow (server-side)
+            print(f"Please visit this URL to authorize Dropbox: {authorize_url}")
+            auth_code = input("Enter the authorization code: ").strip()
+            
+            # Finish the OAuth flow and get the access token
+            oauth_result = auth_flow.finish(auth_code)
+            access_token = oauth_result.access_token
+            
+            # Store the access token in the database
+            db_instance.tokens_collection.update_one(
+                {"user_id": user_id, "bucket_number": bucket_number, "service_type": "Dropbox"},
+                {"$set": {"access_token": access_token}},
+                upsert=True
+            )
+            
+            # Add the Dropbox drive to the DriveManager
             drive_manager.add_drive(dropbox_service_instance, bucket_number, drive_type="Dropbox")
-            return {"status": "success", "message": f"Dropbox bucket {bucket_number} added successfully", "auth_url": auth_url}
+            return {"status": "success", "message": f"Dropbox bucket {bucket_number} added successfully"}
             
         else:
             raise HTTPException(status_code=400, detail="Invalid drive type. Choose 'GoogleDrive' or 'Dropbox'")
