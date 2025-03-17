@@ -7,9 +7,6 @@ from dropbox.oauth import DropboxOAuth2FlowNoRedirect
 import dropbox
 import logging
 from Database import Database
-import requests
-import time
-import random
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -17,100 +14,49 @@ logger = logging.getLogger(__name__)
 
 class AuthManager:
     """Centralized authentication manager for all cloud services"""
-
+    
     def __init__(self, user_id=None, token_dir="tokens"):
         self.user_id = user_id
         self.token_dir = token_dir
         self.db = Database().get_instance()
-        self.otp_storage = {}  # Temporary storage for OTPs
         os.makedirs(self.token_dir, exist_ok=True)
-
-    def generate_otp(self):
-        """Generate a 6-digit OTP."""
-        return str(random.randint(100000, 999999))
-
-    def send_otp_email(self, email, otp):
-        """Send OTP using EmailJS."""
-        service_id = "service_d50t9qq"  # Replace with your EmailJS service ID
-        template_id = "template_fwu8wji"  # Replace with your EmailJS template ID
-        public_key = "oDBLcZpM-dmzaDFYH"  # Replace with your EmailJS Public Key
-
-        data = {
-            "service_id": service_id,
-            "template_id": template_id,
-            "user_id": public_key,  # Use the Public Key as the user_id
-            "template_params": {
-                "to_email": email,
-                "otp": otp
-            }
-        }
-
-        try:
-            response = requests.post("https://api.emailjs.com/api/v1.0/email/send", json=data)
-            if response.status_code == 200:
-                logger.info(f"OTP sent to {email}")
-            else:
-                logger.error(f"Failed to send OTP. Status code: {response.status_code}, Response: {response.text}")
-        except Exception as e:
-            logger.error(f"Error sending OTP email: {e}")
-
-    def store_otp(self, email, otp):
-        """Store OTP with a 5-minute expiry."""
-        self.otp_storage[email] = {"otp": otp, "expiry": time.time() + 300}  # 5 minutes expiry
-
-    def verify_otp(self, email, user_otp):
-        """Verify the OTP entered by the user."""
-        if email in self.otp_storage:
-            stored_otp = self.otp_storage[email]["otp"]
-            expiry = self.otp_storage[email]["expiry"]
-            if time.time() > expiry:
-                return False, "OTP has expired."
-            if stored_otp == user_otp:
-                del self.otp_storage[email]  # Remove OTP after successful verification
-                return True, "OTP verified successfully."
-        return False, "Invalid OTP."
-
-    def register_user(self, username, password, email):
-        """Register a new user with OTP verification."""
+    
+    def register_user(self, username, password):
+        """Register a new user and return user_id"""
         if self.db.users_collection.find_one({"username": username}):
-            return "Username already exists."
+            print("Username already exists. Please choose a different username.")
+            return None
 
-        # Generate and send OTP
-        otp = self.generate_otp()
-        self.send_otp_email(email, otp)
-        self.store_otp(email, otp)
-
-        # Prompt user to enter OTP
-        user_otp = input("Enter the OTP sent to your email: ")
-        verified, message = self.verify_otp(email, user_otp)
-        if not verified:
-            return message
-
-        # Hash the password and save user to database
+        # Hash the password for security
         hashed_password = hashlib.sha256(password.encode()).hexdigest()
+
+        # Insert the new user into the database
         user_id = self.db.users_collection.insert_one({
             "username": username,
             "password": hashed_password,
-            "email": email,
-            "drives": []
+            "drives": []  # Initialize an empty list for drives
         }).inserted_id
 
         self.user_id = user_id
-        return f"User '{username}' registered successfully."
-
+        print(f"User '{username}' registered successfully.")
+        return user_id
+    
     def login_user(self, username, password):
-        """Log in an existing user."""
+        """Login an existing user and return user_id"""
         user = self.db.users_collection.find_one({"username": username})
         if not user:
-            return "User not found."
+            print("User not found. Please register first.")
+            return None
 
         # Verify the password
         hashed_password = hashlib.sha256(password.encode()).hexdigest()
         if user["password"] != hashed_password:
-            return "Incorrect password."
+            print("Incorrect password. Please try again.")
+            return None
 
         self.user_id = user["_id"]
-        return f"User '{username}' logged in successfully."
+        print(f"User '{username}' logged in successfully.")
+        return user["_id"]
     
     def _save_token(self, bucket_number, service_type, token_data):
         """Helper method to save tokens to MongoDB"""

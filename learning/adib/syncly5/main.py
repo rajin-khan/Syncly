@@ -92,21 +92,18 @@ def main():
             # Register a new user
             username = input("Enter a username: ").strip()
             password = input("Enter a password: ").strip()
-            email = input("Enter your email: ").strip()
-            result = auth_manager.register_user(username, password, email)
-            print(result)
-            if "successfully" in result:
-                drive_manager = DriveManager(user_id=auth_manager.user_id, token_dir="tokens")
+            user_id = auth_manager.register_user(username, password)
+            if user_id:
+                drive_manager = DriveManager(user_id=user_id, token_dir="tokens")
                 break  # Proceed to the main menu after registration
 
         elif choice == "2":
             # Log in an existing user
             username = input("Enter your username: ").strip()
             password = input("Enter your password: ").strip()
-            result = auth_manager.login_user(username, password)
-            print(result)
-            if "successful" in result:
-                drive_manager = DriveManager(user_id=auth_manager.user_id, token_dir="tokens")
+            user_id = auth_manager.login_user(username, password)
+            if user_id:
+                drive_manager = DriveManager(user_id=user_id, token_dir="tokens")
                 break  # Proceed to the main menu after login
 
         elif choice == "3":
