@@ -22,19 +22,24 @@
         android:theme="@style/Theme.Syncly"
         tools:targetApi="31">
         <activity
+            android:name=".ViewFilesActivity"
+            android:exported="false" />
+        <activity
             android:name=".DropboxAccountActivity"
             android:exported="true"
             android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https"
+
+                <data
                     android:host="www.dropbox.com"
-                    android:path="/1/oauth2/redirect" />
+                    android:path="/1/oauth2/redirect"
+                    android:scheme="https" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".UploadFilesActivity"
             android:exported="false" />

@@ -23,7 +23,7 @@ public class LoginActivity extends AppCompatActivity {
 
     private EditText usernameInput, passwordInput;
     private ImageView togglePasswordVisibility;
-    private Button loginButton;
+    private Button loginButton, registerButton;
     private boolean isPasswordVisible = false;
     private static final String TAG = "MongoDB";
 
@@ -36,6 +36,7 @@ public class LoginActivity extends AppCompatActivity {
         passwordInput = findViewById(R.id.password_input);
         togglePasswordVisibility = findViewById(R.id.toggle_password_visibility);
         loginButton = findViewById(R.id.btn_login);
+        registerButton = findViewById(R.id.btn_register);
 
         // Toggle Password Visibility
         togglePasswordVisibility.setOnClickListener(v -> {
@@ -60,6 +61,12 @@ public class LoginActivity extends AppCompatActivity {
             } else {
                 new LoginUserTask().execute(username, password);
             }
+        });
+
+        registerButton.setOnClickListener(v -> {
+            //Start button clicked, navigate to RegisterActivity
+            Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
+            startActivity(intent);
         });
     }
 

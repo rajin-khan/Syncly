@@ -32,5 +32,6 @@
     <string name="choose_where">Choose Where to Upload</string>
     <string name="upload_btn_gdrive">Upload to Google Drive</string>
     <string name="upload_btn_db">Upload to Dropbox</string>
+    <string name="new_message">New here? Register</string>
 
 </resources>
