@@ -1,4 +1,24 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Depends, Query, status
+from fastapi import FastAPI, HTTPException, Depends, status, UploadFile, File, Query
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from pymongo import MongoClient
+from pydantic import BaseModel
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+from datetime import datetime, timedelta
+import os
+from AuthManager import AuthManager
+from DriveManager import DriveManager
+from fastapi.staticfiles import StaticFiles
+from fastapi import HTTPException
+from fastapi import Query
+
+import shutil
+from bson import ObjectId
+import logging
+import mimetypes
+from typing import List, Optional
+
+
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -8,7 +28,6 @@ import shutil
 from bson import ObjectId
 import logging
 import mimetypes
-import hashlib
 import dropbox
 
 from Database import Database
@@ -18,45 +37,46 @@ from Dropbox import DropboxService
 from GDriveFile import GoogleDriveFile
 from DropBoxFile import DropBoxFile
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger("syncly-api")
 
-app = FastAPI(
-    title="Syncly API",
-    description="API for managing cloud storage across multiple providers",
-    version="1.0.0"
-)
+# FastAPI app
+app = FastAPI()
 
-# Configure CORS to allow frontend access
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Adjust this in production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Add this line after creating the FastAPI app
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Ensure upload directory exists
-UPLOAD_FOLDER = "uploads"
-DOWNLOAD_FOLDER = "downloads"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
+# MongoDB connection
+client = MongoClient("mongodb://localhost:27017/")
+db = client["Syncly"]
+users_collection = db["users"]
 
-# Database initialization
-db_instance = Database().get_instance()
+# Security settings
+SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-### Pydantic Models ###
-class UserAuth(BaseModel):
+# Password hashing
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# OAuth2 scheme
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+# Pydantic models
+class User(BaseModel):
     username: str
     password: str
+    email: str
 
-class UserResponse(BaseModel):
-    user_id: str
-    username: str
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    username: str | None = None
 
 class StorageInfo(BaseModel):
     provider: str
@@ -78,74 +98,105 @@ class FileInfo(BaseModel):
     path: str
 
 class AddDriveRequest(BaseModel):
-    drive_type: str = Field(..., description="Type of drive to add (GoogleDrive or Dropbox)")
+    drive_type: str
 
-### AuthManager ###
-class AuthManager:
-    def __init__(self):
-        self.db = db_instance
+# Helper functions
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
 
-    def register_user(self, username: str, password: str):
-        """Register a new user."""
-        if self.db.users_collection.find_one({"username": username}):
-            raise HTTPException(status_code=400, detail="Username already exists.")
-        hashed_password = hashlib.sha256(password.encode()).hexdigest()
-        user_id = self.db.users_collection.insert_one({
-            "username": username,
-            "password": hashed_password,
-            "drives": []
-        }).inserted_id
-        return {"message": "User registered successfully", "user_id": str(user_id)}
+def get_password_hash(password):
+    return pwd_context.hash(password)
 
-    def login_user(self, username: str, password: str):
-        """Log in an existing user."""
-        user = self.db.users_collection.find_one({"username": username})
-        if not user:
-            raise HTTPException(status_code=401, detail="User not found.")
-        hashed_password = hashlib.sha256(password.encode()).hexdigest()
-        if user["password"] != hashed_password:
-            raise HTTPException(status_code=401, detail="Incorrect password.")
-        return {"message": "User logged in successfully", "user_id": str(user["_id"])}
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
 
-### Helper Functions ###
-def validate_user_id(user_id: str) -> ObjectId:
-    """Validate and convert user_id string to ObjectId."""
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
     try:
-        obj_id = ObjectId(user_id)
-        if not db_instance.users_collection.find_one({"_id": obj_id}):
-            raise HTTPException(status_code=401, detail="Invalid user ID")
-        return obj_id
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid user ID format")
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+        token_data = TokenData(username=username)
+    except JWTError:
+        raise credentials_exception
 
-### Authentication Dependency ###
-async def get_user_id(user_id: str = Query(..., description="User ID for authentication")):
-    return validate_user_id(user_id)
+    user = users_collection.find_one({"username": token_data.username})
+    if user is None:
+        raise credentials_exception
+    return user
 
-### Routes ###
-@app.get("/", tags=["Status"])
-async def root():
-    """Check if the API is running."""
-    return {"status": "success", "message": "Syncly API is running"}
+# Routes
+@app.post("/register", status_code=status.HTTP_201_CREATED)
+async def register(user: User):
+    if users_collection.find_one({"username": user.username}):
+        raise HTTPException(status_code=400, detail="Username already exists")
 
-@app.post("/auth/register", response_model=UserResponse, tags=["Authentication"])
-async def register_user(user: UserAuth):
-    """Register a new user."""
-    auth_manager = AuthManager()
-    result = auth_manager.register_user(user.username, user.password)
-    return {"user_id": result["user_id"], "username": user.username}
+    if users_collection.find_one({"email": user.email}):
+        raise HTTPException(status_code=400, detail="Email already exists")
 
-@app.post("/auth/login", response_model=UserResponse, tags=["Authentication"])
-async def login_user(user: UserAuth):
-    """Log in an existing user."""
-    auth_manager = AuthManager()
-    result = auth_manager.login_user(user.username, user.password)
-    return {"user_id": result["user_id"], "username": user.username}
+    hashed_password = get_password_hash(user.password)
+    users_collection.insert_one({
+        "username": user.username,
+        "password": hashed_password,
+        "email": user.email,
+        "drives": []  # Initialize an empty drives list
+    })
+    return {"message": "User registered successfully"}
 
+@app.post("/token")
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    user = users_collection.find_one({"username": form_data.username})
+    if not user or not verify_password(form_data.password, user["password"]):
+        raise HTTPException(status_code=400, detail="Incorrect username or password")
+
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user["username"]}, expires_delta=access_token_expires
+    )
+
+    # Log the token for debugging
+    print("Generated JWT:", access_token)
+
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@app.get("/protected")
+async def protected_route(current_user: dict = Depends(get_current_user)):
+    return {"message": f"Hello, {current_user['username']}! You are authenticated."}
+
+@app.post("/upload")
+async def upload_file(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
+    file_location = f"uploads/{file.filename}"
+    with open(file_location, "wb") as buffer:
+        buffer.write(file.file.read())
+    return {"message": f"File '{file.filename}' uploaded successfully"}
+
+@app.post("/validate-token")
+async def validate_token(token: str = Query(..., description="The JWT token to validate")):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        print("JWT payload:", payload)  # Log the payload for debugging
+        return {"username": payload.get("sub")}
+    except JWTError as e:
+        print("JWT validation error:", e)  # Log the error for debugging
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+# Integrated functionality from the old API
 @app.get("/storage", response_model=StorageSummary, tags=["Storage"])
-async def get_storage_info(user_id: ObjectId = Depends(get_user_id)):
+async def get_storage_info(current_user: dict = Depends(get_current_user)):
     """Get storage information for all connected drives."""
-    drive_manager = DriveManager(user_id=user_id)
+    drive_manager = DriveManager(user_id=current_user["_id"])
     storages_info, total_limit, total_usage = drive_manager.check_all_storages()
     
     return {
@@ -166,10 +217,10 @@ async def get_storage_info(user_id: ObjectId = Depends(get_user_id)):
 @app.post("/drives", tags=["Storage"])
 async def add_drive(
     request: AddDriveRequest,
-    user_id: ObjectId = Depends(get_user_id)
+    current_user: dict = Depends(get_current_user)
 ):
     """Add a new storage drive."""
-    drive_manager = DriveManager(user_id=user_id)
+    drive_manager = DriveManager(user_id=current_user["_id"])
     
     try:
         bucket_number = len(drive_manager.get_all_authenticated_buckets()) + 1
@@ -180,29 +231,20 @@ async def add_drive(
             return {"status": "success", "message": f"Google Drive bucket {bucket_number} added successfully"}
             
         elif request.drive_type == "Dropbox":
-            # Initialize DropboxService with app credentials
             dropbox_service_instance = DropboxService(token_dir="tokens", app_key="w84emdpux17qpnj", app_secret="x6ce7dtmj51xqc7")
-            
-            # Start the OAuth flow (no redirect, server handles it)
             auth_flow = dropbox.DropboxOAuth2FlowNoRedirect(dropbox_service_instance.app_key, dropbox_service_instance.app_secret)
             authorize_url = auth_flow.start()
-            
-            # Automatically complete the OAuth flow (server-side)
             print(f"Please visit this URL to authorize Dropbox: {authorize_url}")
             auth_code = input("Enter the authorization code: ").strip()
-            
-            # Finish the OAuth flow and get the access token
             oauth_result = auth_flow.finish(auth_code)
             access_token = oauth_result.access_token
             
-            # Store the access token in the database
-            db_instance.tokens_collection.update_one(
-                {"user_id": user_id, "bucket_number": bucket_number, "service_type": "Dropbox"},
+            db.tokens_collection.update_one(
+                {"user_id": current_user["_id"], "bucket_number": bucket_number, "service_type": "Dropbox"},
                 {"$set": {"access_token": access_token}},
                 upsert=True
             )
             
-            # Add the Dropbox drive to the DriveManager
             drive_manager.add_drive(dropbox_service_instance, bucket_number, drive_type="Dropbox")
             return {"status": "success", "message": f"Dropbox bucket {bucket_number} added successfully"}
             
@@ -217,16 +259,14 @@ async def add_drive(
 async def list_files(
     query: Optional[str] = None,
     limit: Optional[int] = Query(10, description="Number of files to retrieve (default: 10)"),
-    user_id: ObjectId = Depends(get_user_id)
+    current_user: dict = Depends(get_current_user)
 ):
     """List files from all connected drives with optional search and limit."""
     try:
-        drive_manager = DriveManager(user_id=user_id)
-        
+        drive_manager = DriveManager(user_id=current_user["_id"])
         all_files = []
         seen_files = set()
         
-        # Collect files from all drives
         for drive in drive_manager.drives:
             try:
                 files = drive.listFiles(query=query)
@@ -241,7 +281,6 @@ async def list_files(
                         })
                         seen_files.add(file_name)
                         
-                        # Stop if we've reached the limit
                         if len(all_files) >= limit:
                             break
                 if len(all_files) >= limit:
@@ -249,7 +288,6 @@ async def list_files(
             except Exception as e:
                 logger.error(f"Error retrieving files from {type(drive).__name__}: {e}")
         
-        # Sort files by name
         all_files.sort(key=lambda x: x["name"])
         return all_files
     
@@ -260,107 +298,66 @@ async def list_files(
 @app.post("/files/upload", tags=["Files"])
 async def upload_file(
     file: UploadFile = File(...),
-    user_id: str = Form(...),
+    current_user: dict = Depends(get_current_user)
 ):
     """Upload a file to the best available cloud storage."""
-    obj_id = validate_user_id(user_id)
+    file_location = f"uploads/{file.filename}"
+    with open(file_location, "wb") as buffer:
+        buffer.write(file.file.read())
+    
+    drive_manager = DriveManager(user_id=current_user["_id"])
+    authenticated_buckets = drive_manager.get_all_authenticated_buckets()
+    if not authenticated_buckets:
+        os.remove(file_location)
+        raise HTTPException(status_code=400, detail="No authenticated drives found. Please add a drive first.")
+    
+    storages_info, total_limit, total_usage = drive_manager.check_all_storages()
+    sorted_buckets = drive_manager.get_sorted_buckets()
+    if not sorted_buckets:
+        os.remove(file_location)
+        raise HTTPException(status_code=400, detail="No available storage with free space")
+    
+    best_bucket = sorted_buckets[0][1]
+    bucket_number = sorted_buckets[0][2]
     
     try:
-        # Save uploaded file temporarily
-        file_path = os.path.join(UPLOAD_FOLDER, file.filename)
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+        if isinstance(best_bucket, DropboxService):
+            access_token = best_bucket.service._oauth2_access_token
+            dropbox_file = DropBoxFile(access_token, drive_manager)
+            dropbox_file.upload_file(file_location, file.filename)
+            provider = "Dropbox"
+        elif isinstance(best_bucket, GoogleDrive):
+            gdrive_file = GoogleDriveFile(drive_manager)
+            gdrive_file.upload_file(file_location, file.filename, "application/octet-stream")
+            provider = "Google Drive"
+        else:
+            os.remove(file_location)
+            raise HTTPException(status_code=400, detail=f"Unsupported drive type: {type(best_bucket).__name__}")
         
-        # Initialize DriveManager with the correct user_id and token_dir
-        drive_manager = DriveManager(user_id=obj_id, token_dir="tokens")
-        
-        # Check if drives are authenticated
-        authenticated_buckets = drive_manager.get_all_authenticated_buckets()
-        if not authenticated_buckets:
-            os.remove(file_path)  # Clean up temp file
-            raise HTTPException(status_code=400, detail="No authenticated drives found. Please add a drive first.")
-        
-        # Log authenticated buckets
-        logger.info(f"Authenticated buckets: {authenticated_buckets}")
-        
-        # Get storage information for all drives
-        storages_info, total_limit, total_usage = drive_manager.check_all_storages()
-        logger.info(f"Storage information: {storages_info}")
-        
-        # Get sorted buckets (drives with free space)
-        sorted_buckets = drive_manager.get_sorted_buckets()
-        logger.info(f"Sorted buckets: {sorted_buckets}")
-        
-        if not sorted_buckets:
-            os.remove(file_path)  # Clean up temp file
-            raise HTTPException(status_code=400, detail="No available storage with free space")
-        
-        # Select the best bucket (drive with the most free space)
-        best_bucket = sorted_buckets[0][1]  # Get the drive instance
-        bucket_number = sorted_buckets[0][2]  # Get the bucket number
-        logger.info(f"Selected best bucket: {type(best_bucket).__name__} (Bucket {bucket_number})")
-        
-        # Upload to the best available storage
-        try:
-            if isinstance(best_bucket, DropboxService):
-                access_token = best_bucket.service._oauth2_access_token
-                dropbox_file = DropBoxFile(access_token, drive_manager)
-                dropbox_file.upload_file(file_path, file.filename)
-                provider = "Dropbox"
-                
-            elif isinstance(best_bucket, GoogleDrive):
-                gdrive_file = GoogleDriveFile(drive_manager)
-                gdrive_file.upload_file(file_path, file.filename, "application/octet-stream")
-                provider = "Google Drive"
-                
-            else:
-                os.remove(file_path)  # Clean up temp file
-                raise HTTPException(status_code=400, detail=f"Unsupported drive type: {type(best_bucket).__name__}")
-                
-            # Clean up temp file
-            os.remove(file_path)
-            
-            return {
-                "status": "success", 
-                "message": f"File '{file.filename}' uploaded to {provider} (Bucket {bucket_number + 1})"
-            }
-            
-        except Exception as e:
-            # Clean up temp file in case of error
-            if os.path.exists(file_path):
-                os.remove(file_path)
-            logger.error(f"Error uploading file: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
-            
-    except HTTPException:
-        raise
+        os.remove(file_location)
+        return {"status": "success", "message": f"File '{file.filename}' uploaded to {provider} (Bucket {bucket_number + 1})"}
+    
     except Exception as e:
-        logger.error(f"Error in upload process: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Upload process failed: {str(e)}")
-    finally:
-        # Ensure the temporary file is cleaned up
-        if os.path.exists(file_path):
-            os.remove(file_path)
-            logger.info(f"Temporary file {file_path} cleaned up.")
+        if os.path.exists(file_location):
+            os.remove(file_location)
+        logger.error(f"Error uploading file: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
 @app.get("/files/download", tags=["Files"])
 async def download_file(
     file_name: str,
-    user_id: ObjectId = Depends(get_user_id)
+    current_user: dict = Depends(get_current_user)
 ):
     """Download a file from any connected drive."""
     try:
-        drive_manager = DriveManager(user_id=user_id)
-        
-        # Try to find and download the file from Google Drive first
+        drive_manager = DriveManager(user_id=current_user["_id"])
         google_drive_file = GoogleDriveFile(drive_manager)
-        downloaded_file = google_drive_file.download_from_all_buckets(file_name, DOWNLOAD_FOLDER)
+        downloaded_file = google_drive_file.download_from_all_buckets(file_name, "downloads")
         
         if downloaded_file:
-            # Determine the MIME type based on the file extension
             mime_type, _ = mimetypes.guess_type(downloaded_file)
             if not mime_type:
-                mime_type = "application/octet-stream"  # Fallback for unknown types
+                mime_type = "application/octet-stream"
             
             return FileResponse(
                 path=downloaded_file,
@@ -368,22 +365,18 @@ async def download_file(
                 media_type=mime_type
             )
         
-        # If not found in Google Drive, try Dropbox
         dropbox_accounts = [drive for drive in drive_manager.drives if isinstance(drive, DropboxService)]
-        
         for dropbox_service in dropbox_accounts:
             access_token = dropbox_service.service._oauth2_access_token
             dropbox_file = DropBoxFile(access_token, drive_manager)
-            
             dropbox_file_path = dropbox_file.search_file(file_name)
             if dropbox_file_path:
-                save_file_path = os.path.join(DOWNLOAD_FOLDER, os.path.basename(dropbox_file_path))
+                save_file_path = os.path.join("downloads", os.path.basename(dropbox_file_path))
                 dropbox_file.download_file(dropbox_file_path, save_file_path)
                 
-                # Determine the MIME type based on the file extension
                 mime_type, _ = mimetypes.guess_type(save_file_path)
                 if not mime_type:
-                    mime_type = "application/octet-stream"  # Fallback for unknown types
+                    mime_type = "application/octet-stream"
                 
                 return FileResponse(
                     path=save_file_path,
@@ -391,15 +384,15 @@ async def download_file(
                     media_type=mime_type
                 )
         
-        # If file not found anywhere
         raise HTTPException(status_code=404, detail=f"File '{file_name}' not found in any connected storage")
-        
+    
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error downloading file: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Download failed: {str(e)}")
 
+# Run the app
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -7,6 +7,8 @@ from dropbox.oauth import DropboxOAuth2FlowNoRedirect
 import dropbox
 import logging
 from Database import Database
+from jose import JWTError, jwt
+from datetime import datetime, timedelta
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -20,6 +22,9 @@ class AuthManager:
         self.token_dir = token_dir
         self.db = Database().get_instance()
         os.makedirs(self.token_dir, exist_ok=True)
+        self.SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key")
+        self.ALGORITHM = "HS256"
+        self.ACCESS_TOKEN_EXPIRE_MINUTES = 30
     
     def register_user(self, username, password):
         """Register a new user and return user_id"""
@@ -58,23 +63,17 @@ class AuthManager:
         print(f"User '{username}' logged in successfully.")
         return user["_id"]
     
-    def _save_token(self, bucket_number, service_type, token_data):
-        """Helper method to save tokens to MongoDB"""
-        self.db.tokens_collection.update_one(
-            {"user_id": self.user_id, "bucket_number": bucket_number, "service_type": service_type},
-            {"$set": token_data},
-            upsert=True
-        )
-        self._update_user_drives(bucket_number)
-    
-    def _update_user_drives(self, bucket_number):
-        """Update the user's drives list in MongoDB"""
-        self.db.users_collection.update_one(
-            {"_id": self.user_id},
-            {"$addToSet": {"drives": bucket_number}},
-            upsert=True
-        )
-    
+    def create_access_token(self, data: dict, expires_delta: timedelta | None = None):
+        """Create a JWT token for authentication"""
+        to_encode = data.copy()
+        if expires_delta:
+            expire = datetime.utcnow() + expires_delta
+        else:
+            expire = datetime.utcnow() + timedelta(minutes=15)
+        to_encode.update({"exp": expire})
+        encoded_jwt = jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
+        return encoded_jwt
+
     def authenticate_google_drive(self, bucket_number, credentials_file="credentials.json"):
         """Authenticate with Google Drive using PKCE and refresh tokens"""
         SCOPES = ['https://www.googleapis.com/auth/drive']
@@ -175,8 +174,10 @@ class AuthManager:
             logger.error(f"Dropbox authentication error: {e}")
             return None
     
-    def get_all_authenticated_buckets(self):
-        """Get all authenticated bucket numbers for the current user"""
-        tokens = self.db.tokens_collection.find({"user_id": self.user_id})
-        authenticated_buckets = [str(token["bucket_number"]) for token in tokens]
-        return authenticated_buckets
+    def _save_token(self, bucket_number, service_type, token_data):
+        """Save tokens to MongoDB"""
+        self.db.tokens_collection.update_one(
+            {"user_id": self.user_id, "bucket_number": bucket_number, "service_type": service_type},
+            {"$set": token_data},
+            upsert=True
+        )

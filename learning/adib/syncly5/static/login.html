@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="form-container">
+        <h2>Login</h2>
+        <form id="loginForm">
+            <input type="text" id="username" placeholder="Username" required>
+            <input type="password" id="password" placeholder="Password" required>
+            <button type="submit">Login</button>
+        </form>
+        <p>Don't have an account? <a href="/static/register.html">Register here</a></p>
+    </div>
+
+    <div id="token-display" style="display: none; margin-top: 20px;">
+        <h3>Your JWT:</h3>
+        <pre id="jwt-token"></pre>
+        <p>Copy this token and paste it into the CLI to continue.</p>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch('/token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `username=${username}&password=${password}`,
+                });
+
+                const result = await response.json();
+                console.log("Login response:", result);  // Debugging: Log the response
+
+                if (response.ok) {
+                    // Display the JWT
+                    document.getElementById('jwt-token').textContent = result.access_token;
+                    document.getElementById('token-display').style.display = 'block';
+                } else {
+                    alert(result.detail || 'Login failed');
+                }
+            } catch (error) {
+                console.error("Error during login:", error);  // Debugging: Log any errors
+                alert("An error occurred. Please try again.");
+            }
+        });
+    </script>
+</body>
+</html>

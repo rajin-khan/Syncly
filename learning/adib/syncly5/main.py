@@ -1,14 +1,18 @@
 import os
+import requests
+import webbrowser
 from DriveManager import DriveManager
 from GoogleDrive import GoogleDrive
 from GDriveFile import GoogleDriveFile
 from Dropbox import DropboxService
 from DropBoxFile import DropBoxFile
-from AuthManager import AuthManager
 from Database import Database
 
+# Web portal API URL
+WEB_PORTAL_URL = "http://127.0.0.1:8000"
+
 def upload_file(drive_manager):
-    #**Get the sorted list of buckets (by free space, descending)**
+    # **Get the sorted list of buckets (by free space, descending)**
     sorted_buckets = drive_manager.get_sorted_buckets()
     print("Sorted Buckets:", sorted_buckets)
 
@@ -78,40 +82,56 @@ def search_and_download_file(drive_manager, file_name, save_path="downloads"):
     print("File not found in any connected storage.")
     return None
 
-def main():
-    auth_manager = AuthManager()
+def get_user_id(token):
+    """
+    Get the user ID from the JWT.
+    """
+    if not token:
+        return None
 
+    # Decode the JWT to get the user ID
+    try:
+        from jose import jwt
+        payload = jwt.decode(token, "your-secret-key", algorithms=["HS256"])
+        return payload.get("sub")
+    except Exception as e:
+        print("Error decoding token:", e)
+        return None
+
+def authenticate_via_web_portal():
+    """
+    Redirect the user to the web portal for authentication and return the JWT.
+    """
+    print("\nTo continue, please authenticate via the web portal:")
+    auth_url = f"{WEB_PORTAL_URL}/static/login.html"
+    print(auth_url)
+
+    # Open the authentication page in the default web browser
+    webbrowser.open(auth_url)
+
+    print("\nAfter logging in, return to this CLI and enter the JWT you received.")
+    token = input("Enter your JWT: ").strip()
+
+    return token
+
+def main():
     print("WELCOME TO SYNCLY! <3")
 
-    # User registration/login flow
-    while True:
-        print("\n1: Register\n2: Login\n3: Exit")
-        choice = input("Choose option: ").strip()
+    # Authenticate via the web portal
+    token = None
+    while not token:
+        token = authenticate_via_web_portal()
+        if not token:
+            print("Invalid token. Please try again.")
 
-        if choice == "1":
-            # Register a new user
-            username = input("Enter a username: ").strip()
-            password = input("Enter a password: ").strip()
-            user_id = auth_manager.register_user(username, password)
-            if user_id:
-                drive_manager = DriveManager(user_id=user_id, token_dir="tokens")
-                break  # Proceed to the main menu after registration
+    # Get the user ID from the token
+    user_id = get_user_id(token)
+    if not user_id:
+        print("Error: Unable to retrieve user ID from token.")
+        return
 
-        elif choice == "2":
-            # Log in an existing user
-            username = input("Enter your username: ").strip()
-            password = input("Enter your password: ").strip()
-            user_id = auth_manager.login_user(username, password)
-            if user_id:
-                drive_manager = DriveManager(user_id=user_id, token_dir="tokens")
-                break  # Proceed to the main menu after login
-
-        elif choice == "3":
-            print("Thank you for using Syncly!")
-            return  # Exit the program
-
-        else:
-            print("Invalid choice. Please try again.")
+    # Initialize DriveManager with the user ID
+    drive_manager = DriveManager(user_id=user_id, token_dir="tokens")
 
     # Main menu
     while True:

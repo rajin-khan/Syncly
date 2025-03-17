@@ -30,71 +30,60 @@ async def start(update: Update, context: CallbackContext) -> None:
     logger.info(f"Received /start command from user: {update.message.from_user.username}")
     await update.message.reply_text(
         "Hi! I'm the Syncly Bot. My commands are:\n"
-        "/login <username> <password> : Log in to your account (if not registered)\n"
-        "/register <username> <password> : Register a new account\n"
-        "/addbucket <bucket_type> : Add a new storage bucket (GoogleDrive or Dropbox)\n"
+        "/login - Log in to your account\n"
+        "/addbucket <bucket_type> - Add a new storage bucket (GoogleDrive or Dropbox)\n"
         "/storage - View Total Storage Information\n"
         "/list - List your files\n"
-        "/upload - Just sent a file from your Phone's File Explorer (or Drag and Drop on Desktop)\n"
-        #"/download <file_name> - Download a file"
+        "/upload - Just send a file from your Phone's File Explorer (or Drag and Drop on Desktop)\n"
+        "/download <file_name> - Download a file"
     )
 
-async def register(update: Update, context: CallbackContext) -> None:
-    """Registers a new user."""
-    if len(context.args) < 2:
-        await update.message.reply_text("Usage: /register <username> <password>")
-        return
-    
-    username = context.args[0]
-    password = context.args[1]
-
-    logger.info(f"Attempting to register user: {username}")
-    try:
-        response = requests.post(f"{API_BASE_URL}/auth/register", json={"username": username, "password": password})
-        response.raise_for_status()  # Raise an exception for HTTP errors
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Registration failed for user {username}: {e}")
-        await update.message.reply_text("❌ Registration failed. Please try again.")
-        return
-    
-    user_data = response.json()
-    user_id = user_data["user_id"]
-    logger.info(f"Registration successful for user: {username}, user_id: {user_id}")
-    await update.message.reply_text(f"✅ Registration successful!\nUser ID: `{user_id}`", parse_mode="Markdown")
-
 async def login(update: Update, context: CallbackContext) -> None:
-    """Logs in a user."""
-    if len(context.args) < 2:
-        await update.message.reply_text("Usage: /login <username> <password>")
-        return
-    
-    username = context.args[0]
-    password = context.args[1]
+    """Guides the user to log in via the web portal."""
+    login_url = f"{API_BASE_URL}/static/login.html"
+    await update.message.reply_text(
+        f"Please log in via the web portal:\n{login_url}\n\n"
+        "After logging in, copy the JWT and paste it here."
+    )
 
-    logger.info(f"Attempting to log in user: {username}")
-    try:
-        response = requests.post(f"{API_BASE_URL}/auth/login", json={"username": username, "password": password})
-        response.raise_for_status()  # Raise an exception for HTTP errors
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Login failed for user {username}: {e}")
-        await update.message.reply_text("❌ Login failed. Please check your credentials.")
+async def handle_jwt(update: Update, context: CallbackContext) -> None:
+    """Handles the JWT pasted by the user."""
+    jwt = update.message.text.strip()  # Remove leading/trailing whitespace
+    logger.info(f"Received JWT from user: {update.message.from_user.username}")
+    logger.info(f"JWT: {jwt}")  # Log the JWT for debugging
+
+    # Validate the JWT format (basic check)
+    if not re.match(r"^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]*$", jwt):
+        await update.message.reply_text("❌ Invalid JWT format. Please copy the entire token.")
         return
-    
-    user_data = response.json()
-    user_id = user_data["user_id"]
-    context.user_data["user_id"] = user_id
-    logger.info(f"Login successful for user: {username}, user_id: {user_id}")
-    await update.message.reply_text(f"✅ Login successful!\nUser ID: `{user_id}`", parse_mode="Markdown")
+
+    try:
+        # Validate the JWT with the backend
+        response = requests.post(
+            f"{API_BASE_URL}/validate-token?token={jwt}"  # Send the token as a query parameter
+        )
+        response.raise_for_status()  # Raise an exception for HTTP errors
+
+        # Extract the username from the JWT payload
+        username = response.json().get("username")
+        context.user_data["jwt"] = jwt
+        context.user_data["username"] = username
+
+        await update.message.reply_text(f"✅ Login successful! Welcome, {username}.")
+    except requests.exceptions.RequestException as e:
+        logger.error(f"JWT validation failed: {e}")
+        logger.error(f"Response: {e.response.text}")  # Log the response for debugging
+        await update.message.reply_text("❌ Invalid JWT. Please try again.")
 
 async def add_drive(update: Update, context: CallbackContext) -> None:
     """Adds a new drive (GoogleDrive or Dropbox)."""
-    user_id = context.user_data.get("user_id")
-    if not user_id:
-        await update.message.reply_text("❌ Please login first using /login.")
+    jwt = context.user_data.get("jwt")
+    if not jwt:
+        await update.message.reply_text("❌ Please log in first using /login.")
         return
     
     if len(context.args) < 1:
-        await update.message.reply_text("Usage: /add_drive <drive_type> (GoogleDrive or Dropbox)")
+        await update.message.reply_text("Usage: /addbucket <drive_type> (GoogleDrive or Dropbox)")
         return
     
     drive_type = context.args[0]
@@ -102,14 +91,14 @@ async def add_drive(update: Update, context: CallbackContext) -> None:
         await update.message.reply_text("❌ Invalid drive type. Choose 'GoogleDrive' or 'Dropbox'.")
         return
 
-    logger.info(f"Attempting to add drive: {drive_type} for user: {user_id}")
+    logger.info(f"Attempting to add drive: {drive_type} for user: {context.user_data['username']}")
     
     try:
         # Send a request to the API to add the drive
         response = requests.post(
             f"{API_BASE_URL}/drives",
             json={"drive_type": drive_type},
-            params={"user_id": user_id}
+            headers={"Authorization": f"Bearer {jwt}"}
         )
         response.raise_for_status()  # Raise an exception for HTTP errors
         
@@ -117,14 +106,14 @@ async def add_drive(update: Update, context: CallbackContext) -> None:
         logger.info(f"Drive added successfully: {drive_data}")
         await update.message.reply_text(f"✅ {drive_type} added successfully!\n{drive_data['message']}")
     except requests.exceptions.RequestException as e:
-        logger.error(f"Failed to add drive for user {user_id}: {e}")
+        logger.error(f"Failed to add drive: {e}")
         await update.message.reply_text("❌ Failed to add drive. Please try again.")
 
 async def list_files(update: Update, context: CallbackContext) -> None:
     """Lists stored files with an optional limit."""
-    user_id = context.user_data.get("user_id")
-    if not user_id:
-        await update.message.reply_text("❌ Please login first using /login.")
+    jwt = context.user_data.get("jwt")
+    if not jwt:
+        await update.message.reply_text("❌ Please log in first using /login.")
         return
 
     # Default limit is 10 files
@@ -140,8 +129,12 @@ async def list_files(update: Update, context: CallbackContext) -> None:
             return
 
     try:
-        logger.info(f"Fetching files for user: {user_id} with limit: {limit}")
-        response = requests.get(f"{API_BASE_URL}/files", params={"user_id": user_id, "limit": limit}, timeout=5)
+        logger.info(f"Fetching files for user: {context.user_data['username']} with limit: {limit}")
+        response = requests.get(
+            f"{API_BASE_URL}/files",
+            params={"limit": limit},
+            headers={"Authorization": f"Bearer {jwt}"}
+        )
         response.raise_for_status()  # Raise an exception for HTTP errors
         
         # Log the API response
@@ -154,14 +147,14 @@ async def list_files(update: Update, context: CallbackContext) -> None:
         else:
             await update.message.reply_text("📂 No files found. Add a bucket first (after logging in).")
     except requests.exceptions.RequestException as e:
-        logger.error(f"Failed to retrieve files for user {user_id}: {e}")
+        logger.error(f"Failed to retrieve files: {e}")
         await update.message.reply_text("❌ Failed to retrieve files.")
 
 async def upload_file(update: Update, context: CallbackContext) -> None:
     """Uploads a file to Syncly."""
-    user_id = context.user_data.get("user_id")
-    if not user_id:
-        await update.message.reply_text("❌ Please login first using /login.")
+    jwt = context.user_data.get("jwt")
+    if not jwt:
+        await update.message.reply_text("❌ Please log in first using /login.")
         return
     
     if not update.message.document:
@@ -177,14 +170,18 @@ async def upload_file(update: Update, context: CallbackContext) -> None:
     # Download the file to the specified path
     await file.download_to_drive(file_path)
 
-    logger.info(f"Uploading file: {file_path} for user: {user_id}")
+    logger.info(f"Uploading file: {file_path} for user: {context.user_data['username']}")
     try:
         with open(file_path, "rb") as f:
             files = {"file": f}
-            response = requests.post(f"{API_BASE_URL}/files/upload", files=files, data={"user_id": user_id})
+            response = requests.post(
+                f"{API_BASE_URL}/files/upload",
+                files=files,
+                headers={"Authorization": f"Bearer {jwt}"}
+            )
             response.raise_for_status()  # Raise an exception for HTTP errors
     except requests.exceptions.RequestException as e:
-        logger.error(f"File upload failed for user {user_id}: {e}")
+        logger.error(f"File upload failed: {e}")
         await update.message.reply_text("❌ File upload failed.")
         return
     finally:
@@ -197,9 +194,9 @@ async def upload_file(update: Update, context: CallbackContext) -> None:
 
 async def download_file(update: Update, context: CallbackContext) -> None:
     """Downloads a file from Syncly."""
-    user_id = context.user_data.get("user_id")
-    if not user_id:
-        await update.message.reply_text("❌ Please login first using /login.")
+    jwt = context.user_data.get("jwt")
+    if not jwt:
+        await update.message.reply_text("❌ Please log in first using /login.")
         return
     
     if len(context.args) < 1:
@@ -208,12 +205,16 @@ async def download_file(update: Update, context: CallbackContext) -> None:
     
     file_name = context.args[0]
     sanitized_file_name = sanitize_filename(file_name)  # Sanitize the filename
-    logger.info(f"Downloading file: {sanitized_file_name} for user: {user_id}")
+    logger.info(f"Downloading file: {sanitized_file_name} for user: {context.user_data['username']}")
     try:
-        response = requests.get(f"{API_BASE_URL}/files/download", params={"user_id": user_id, "file_name": sanitized_file_name})
+        response = requests.get(
+            f"{API_BASE_URL}/files/download",
+            params={"file_name": sanitized_file_name},
+            headers={"Authorization": f"Bearer {jwt}"}
+        )
         response.raise_for_status()  # Raise an exception for HTTP errors
     except requests.exceptions.RequestException as e:
-        logger.error(f"File download failed for user {user_id}, file {sanitized_file_name}: {e}")
+        logger.error(f"File download failed for file {sanitized_file_name}: {e}")
         await update.message.reply_text("❌ File not found or failed to download.")
         return
     
@@ -233,15 +234,18 @@ async def download_file(update: Update, context: CallbackContext) -> None:
     
 async def storage_info(update: Update, context: CallbackContext) -> None:
     """Retrieves and displays storage information for the user."""
-    user_id = context.user_data.get("user_id")
-    if not user_id:
-        await update.message.reply_text("❌ Please login first using /login.")
+    jwt = context.user_data.get("jwt")
+    if not jwt:
+        await update.message.reply_text("❌ Please log in first using /login.")
         return
 
-    logger.info(f"Fetching storage info for user: {user_id}")
+    logger.info(f"Fetching storage info for user: {context.user_data['username']}")
     try:
         # Call the API to get storage information
-        response = requests.get(f"{API_BASE_URL}/storage", params={"user_id": user_id})
+        response = requests.get(
+            f"{API_BASE_URL}/storage",
+            headers={"Authorization": f"Bearer {jwt}"}
+        )
         response.raise_for_status()  # Raise an exception for HTTP errors
         
         # Parse the API response
@@ -263,7 +267,7 @@ async def storage_info(update: Update, context: CallbackContext) -> None:
         
         await update.message.reply_text(message, parse_mode="Markdown")
     except requests.exceptions.RequestException as e:
-        logger.error(f"Failed to retrieve storage info for user {user_id}: {e}")
+        logger.error(f"Failed to retrieve storage info: {e}")
         await update.message.reply_text("❌ Failed to retrieve storage information.")
 
 def main():
@@ -272,13 +276,13 @@ def main():
 
     # Register commands
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("register", register))
     app.add_handler(CommandHandler("login", login))
     app.add_handler(CommandHandler("addbucket", add_drive))
     app.add_handler(CommandHandler("list", list_files))
     app.add_handler(CommandHandler("download", download_file))
-    app.add_handler(CommandHandler("storage", storage_info))  # Add the new command
+    app.add_handler(CommandHandler("storage", storage_info))
     app.add_handler(MessageHandler(filters.Document.ALL, upload_file))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_jwt))  # Handle JWT input
 
     print("🤖 Bot is running...")
     app.run_polling()
