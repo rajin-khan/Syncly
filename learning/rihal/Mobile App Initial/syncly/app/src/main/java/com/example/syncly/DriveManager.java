@@ -65,6 +65,7 @@ public class DriveManager {
             String driveType = drive.getString("type");
             int bucketNumber = drive.getInteger("bucket_number");
 
+            // Authenticate Google Drive accounts stored in MongoDB
             Future<Void> future = executor.submit(new Callable<Void>() {
                 @Override
                 public Void call() {
@@ -74,7 +75,7 @@ public class DriveManager {
                             @Override
                             public void onAuthComplete(Object result) {
                                 synchronized (drives) {
-                                    drives.add(gd);
+                                    drives.add(gd); // Add authenticated Google Drive account
                                 }
                                 Log.d(TAG, "GoogleDrive authenticated successfully.");
                             }
@@ -92,7 +93,7 @@ public class DriveManager {
                             @Override
                             public void onAuthComplete(Object result) {
                                 synchronized (drives) {
-                                    drives.add(dbx);
+                                    drives.add(dbx); // Add Dropbox service
                                 }
                                 Log.d(TAG, "Dropbox authenticated successfully.");
                             }
@@ -119,6 +120,7 @@ public class DriveManager {
         }
     }
 
+
     public void addDrive(Service drive, int bucketNumber, String driveType) {
         Future<Void> future = executor.submit(new Callable<Void>() {
             @Override
@@ -140,6 +142,7 @@ public class DriveManager {
 
                         db.getDrivesCollection().insertOne(driveDoc);
 
+                        // Update the user's drives list in MongoDB
                         db.getUsersCollection().updateOne(
                                 new Document("_id", userId),
                                 new Document("$addToSet", new Document("drives", bucketNumber)),
@@ -162,6 +165,7 @@ public class DriveManager {
             Log.e(TAG, "Error adding drive: " + e.getMessage());
         }
     }
+
 
     public Map<String, Object> checkAllStorages() {
         sortedBuckets.clear();
@@ -255,6 +259,7 @@ public class DriveManager {
             callback.accept(authenticatedBuckets);
         });
     }
+
 
     public static String[] parsePartInfo(String fileName) {
         String[] patterns = {

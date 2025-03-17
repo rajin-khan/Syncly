@@ -77,6 +77,7 @@ dependencies {
     implementation(libs.google.api.client.android.v272)
     implementation(libs.google.api.services.drive)
     implementation(libs.mongodb.driver.sync.v4101)
+    //implementation (libs.mongo.java.driver)
     implementation(libs.dropbox.core.sdk) // Check for the latest version
     //implementation("com.dropbox.core:dropbox-core-sdk:5.4.3")   //Older version for .android.Auth
     //implementation(libs.dropbox.android.sdk)

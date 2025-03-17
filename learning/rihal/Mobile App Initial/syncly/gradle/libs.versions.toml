@@ -23,6 +23,7 @@ activity = "1.10.1"
 constraintlayout = "2.2.1"
 googleGmsGoogleServices = "4.4.2"
 mongodbDriverSync = "4.10.1"
+mongoJavaDriver = "3.12.10"
 play-services-auth-version = "21.3.0"
 slf4jSimple = "1.7.36"
 
@@ -49,6 +50,7 @@ lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtim
 activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 #noinspection SimilarGradleDependency
+mongo-java-driver = { module = "org.mongodb:mongo-java-driver", version.ref = "mongoJavaDriver" }
 mongodb-driver-sync = { module = "org.mongodb:mongodb-driver-sync", version.ref = "mongodbDriverSync" }
 #noinspection SimilarGradleDependency
 mongodb-driver-sync-v4101 = { module = "org.mongodb:mongodb-driver-sync", version.ref = "mongodbDriverSyncVersion" }

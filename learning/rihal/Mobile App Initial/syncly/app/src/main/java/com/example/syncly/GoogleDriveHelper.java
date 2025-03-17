@@ -8,6 +8,9 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.DriveScopes;
+import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.MongoCollection;
+import org.bson.Document;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
@@ -38,5 +41,18 @@ public class GoogleDriveHelper {
             Log.e(TAG, "Error initializing Google Drive API", e);
             return null;
         }
+    }
+
+    public void storeGoogleDriveToken(String userId, int bucketNumber, String accessToken, String refreshToken) {
+        MongoCollection<Document> tokensCollection = Database.getInstance().getTokensCollection();
+        Document tokenDoc = new Document("user_id", userId)
+                .append("bucket_number", bucketNumber)
+                .append("access_token", accessToken)
+                .append("refresh_token", refreshToken);
+        tokensCollection.updateOne(
+                new Document("user_id", userId).append("bucket_number", bucketNumber),
+                new Document("$set", tokenDoc),
+                new UpdateOptions().upsert(true)
+        );
     }
 }

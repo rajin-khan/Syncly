@@ -39,6 +39,7 @@ public class GoogleDrive extends Service {
     private final Context context;
     private final Database db = Database.getInstance();
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private Credential credential;
 
     public GoogleDrive(Context context) {
         this.context = context;
