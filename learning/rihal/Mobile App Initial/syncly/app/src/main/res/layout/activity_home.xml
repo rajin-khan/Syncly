@@ -50,7 +50,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/welcome_text" />
 
-    <!-- Search Files Button -->
+    <!-- Search Files Button
     <Button
         android:id="@+id/btn_search_files"
         android:layout_width="262dp"
@@ -63,7 +63,7 @@
         android:textSize="18sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btn_view_files" />
+        app:layout_constraintTop_toBottomOf="@+id/btn_view_files" /> -->
 
     <!-- Add New Bucket Button -->
     <Button
@@ -78,7 +78,7 @@
         android:textSize="18sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btn_search_files" />
+        app:layout_constraintTop_toBottomOf="@+id/btn_view_files" />
 
     <!-- Upload Files Button -->
     <Button
