@@ -21,7 +21,7 @@ public class HomeActivity extends AppCompatActivity {
 
         // Initialize buttons
         viewFilesButton = findViewById(R.id.btn_view_files);
-        searchFilesButton = findViewById(R.id.btn_search_files);
+        //searchFilesButton = findViewById(R.id.btn_search_files);
         addBucketButton = findViewById(R.id.btn_add_bucket);
         uploadFilesButton = findViewById(R.id.btn_upload_files);
         exitButton = findViewById(R.id.btn_exit);
@@ -36,12 +36,12 @@ public class HomeActivity extends AppCompatActivity {
         });
 
         // Search Files Button Click Listener
-        searchFilesButton.setOnClickListener(v -> {
+        /*searchFilesButton.setOnClickListener(v -> {
             Toast.makeText(HomeActivity.this, "Search Files Clicked", Toast.LENGTH_SHORT).show();
             // Navigate to SearchFilesActivity (To be implemented)
             // Intent intent = new Intent(HomeActivity.this, SearchFilesActivity.class);
             // startActivity(intent);
-        });
+        });*/
 
         // Add New Bucket Button Click Listener
         addBucketButton.setOnClickListener(v -> {
