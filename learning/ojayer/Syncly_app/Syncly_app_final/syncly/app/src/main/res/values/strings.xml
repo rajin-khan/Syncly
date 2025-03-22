@@ -1,0 +1,39 @@
+<resources>
+    <string name="app_name">Syncly</string>
+    <string name="syncly_logo_desc">Syncly Logo</string>
+    <string name="start_here">START HERE</string>
+    <string name="login">LOGIN</string>
+    <string name="or">or</string>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="welcome_back">WELCOME BACK</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="welcome_message">WELCOME TO SYNCLY MENU.\n\t\t\t\t\tCHOOSE AN OPTION</string>
+    <string name="view_files">View Files</string>
+    <string name="search_files">Search Files</string>
+    <string name="add_bucket">Add New Bucket</string>
+    <string name="upload">Upload Files</string>
+    <string name="exit">Exit</string>
+    <string name="toggle_password">Toggle Password Visibility</string>
+    <string name="username">Username</string>
+    <string name="register_here">Register Here</string>
+    <string name="register_button">REGISTER</string>
+    <string name="choose">CHOOSE A STORAGE OPTION</string>
+    <string name="googleDrive">Google Drive</string>
+    <string name="dropbox">Dropbox</string>
+    <string name="dropbox_app_key">w84emdpux17qpnj</string>
+    <string name="dropbox_app_secret">x6ce7dtmj51xqc7</string>
+    <string name="choose_db_account">Choose Dropbox Account</string>
+    <string name="choose_account">Choose Account</string>
+    <string name="choose_gdrive_account">Choose Google Drive Account</string>
+    <string name="new_message">New Message</string>
+    <string name="select_file">Select File</string>
+    <string name="choose_file">Choose File</string>
+    <string name="no_file_selected">No File Selected</string>
+    <string name="choose_where">Choose Where to Upload</string>
+    <string name="upload_btn_gdrive">Upload to Google Drive</string>
+    <string name="upload_btn_db">Upload to Dropbox</string>
+    <string name="upload_btn_drive">Upload to Syncly</string>
+    <string name="btn_upload">Upload To drive</string>
+
+</resources>
