@@ -1,5 +1,7 @@
 package com.example.syncly;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -170,6 +172,8 @@ public class ViewFilesActivity extends AppCompatActivity {
                                 fileInfo.put("name", file.getName());
                                 fileInfo.put("size", file.getSize() != null ? formatSize(file.getSize()) : "Unknown");
                                 fileInfo.put("provider", "Google Drive (" + email + ")");
+                                //Adding file url from drive
+                                fileInfo.put("url", "https://drive.google.com/file/d/" + file.getId() + "/view");
                                 fileList.add(fileInfo);
                             }
                         }
@@ -196,6 +200,8 @@ public class ViewFilesActivity extends AppCompatActivity {
                             fileInfo.put("name", file.getName());
                             fileInfo.put("size", formatSize(file.getSize()));
                             fileInfo.put("provider", "Dropbox (Bucket " + bucketIndex + ")");
+                            //Adding URL to view files
+                            fileInfo.put("url", "https://www.dropbox.com/home" + file.getPathDisplay());
                             synchronized (fileList) {
                                 fileList.add(fileInfo);
                             }
@@ -218,7 +224,15 @@ public class ViewFilesActivity extends AppCompatActivity {
                 return;
             }
 
-            FileListAdapter adapter = new FileListAdapter(ViewFilesActivity.this, fileList);
+            FileListAdapter adapter = new FileListAdapter(ViewFilesActivity.this, fileList, (url, name) -> {
+                try {
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                    startActivity(intent);
+                } catch (Exception e) {
+                    Toast.makeText(ViewFilesActivity.this, "Unable to open file: " + name, Toast.LENGTH_SHORT).show();
+                    Log.e(TAG, "Failed to open file: " + url, e);
+                }
+            });
             recyclerViewFiles.setAdapter(adapter);
 
             Toast.makeText(ViewFilesActivity.this, "Listed " + fileList.size() + " files.", Toast.LENGTH_SHORT).show();

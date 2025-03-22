@@ -19,10 +19,12 @@ public class FileListAdapter extends RecyclerView.Adapter<FileListAdapter.ViewHo
 
     private final List<Map<String, String>> fileList;
     private final Context context;
+    private final OnFileClickListener listener;
 
-    public FileListAdapter(Context context, List<Map<String, String>> fileList) {
+    public FileListAdapter(Context context, List<Map<String, String>> fileList, OnFileClickListener listener) {
         this.context = context;
         this.fileList = fileList;
+        this.listener = listener;
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
@@ -60,10 +62,21 @@ public class FileListAdapter extends RecyclerView.Adapter<FileListAdapter.ViewHo
         } else {
             Glide.with(context).load(R.drawable.ic_file_placeholder_foreground).into(holder.fileThumbnail);
         }
+        holder.itemView.setOnClickListener(v -> {
+            String url = file.get("url");
+            String nameToView = file.get("name");
+            if (url != null && !url.isEmpty()) {
+                listener.onFileClick(url, nameToView);
+            }
+        });
     }
 
     @Override
     public int getItemCount() {
         return fileList.size();
+    }
+
+    public interface OnFileClickListener {
+        void onFileClick(String fileUrl, String fileName);
     }
 }
