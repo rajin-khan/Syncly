@@ -2,410 +2,160 @@ package com.example.syncly;
 
 import android.content.Context;
 import android.util.Log;
-
-import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.result.UpdateResult; // Add this import
 import org.bson.Document;
+import org.bson.types.ObjectId;
 
-import java.util.function.Consumer;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.dropbox.core.DbxException;
+import com.dropbox.core.v2.DbxClientV2;
+import com.google.api.services.drive.Drive;
 
 public class DriveManager {
-    private final String userId;
-    private final List<Service> drives;
-    private final String tokenDir;
-    private List<Bucket> sortedBuckets;
-    private final Database db;
-    private final ExecutorService executor = Executors.newSingleThreadExecutor(); // Background thread executor
     private static final String TAG = "DriveManager";
-    private final Context context; // Add context for GoogleDrive initialization
+    private static DriveManager instance;
+    private final ObjectId userId; // Changed to ObjectId
+    private final String tokenDir;
+    private final Context context; // Stored for use in Bucket
+    private final List<Bucket> buckets = Collections.synchronizedList(new ArrayList<>());
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private final Database db = Database.getInstance();
+    private CountDownLatch initialLoadLatch = new CountDownLatch(1);
 
-    public DriveManager(String userId, String tokenDir, Context context) {
-        this.userId = userId;
+    private DriveManager(String userId, String tokenDir, Context context) {
+        this.userId = new ObjectId(userId); // Convert String to ObjectId
         this.tokenDir = tokenDir;
-        this.context = context; // Initialize context
-        this.drives = new ArrayList<>();
-        this.sortedBuckets = new ArrayList<>();
-        this.db = Database.getInstance();
-
-        // Initialize MongoDB in a background thread
-        executor.execute(() -> {
-            if (!db.isInitialized()) {
-                db.initialize();
-            }
-            loadUserDrives();
-        });
-
-        File dir = new File(tokenDir);
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
+        this.context = context;
+        loadUserDrives();
     }
 
-    public void loadUserDrives() {
-        List<Document> userDrives = db.getDrivesCollection()
-                .find(new Document("user_id", userId))
-                .into(new ArrayList<>());
+    public static synchronized DriveManager getInstance(String userId, String tokenDir, Context context) {
+        if (instance == null || !instance.userId.toString().equals(userId)) { // Compare as String
+            instance = new DriveManager(userId, tokenDir, context);
+        }
+        return instance;
+    }
 
-        List<Future<Void>> futures = new ArrayList<>();
-        for (Document drive : userDrives) {
-            String driveType = drive.getString("type");
-            int bucketNumber = drive.getInteger("bucket_number");
-
-            // Authenticate Google Drive accounts stored in MongoDB
-            Future<Void> future = executor.submit(new Callable<Void>() {
-                @Override
-                public Void call() {
-                    if ("GoogleDrive".equals(driveType)) {
-                        GoogleDrive gd = new GoogleDrive(context); // Pass context to GoogleDrive
-                        gd.authenticate(bucketNumber, userId, new Service.AuthCallback() {
+    private void loadUserDrives() {
+        executorService.submit(() -> {
+            try {
+                MongoCollection<Document> drivesCollection = db.getDrivesCollection();
+                List<Document> driveDocs = drivesCollection.find(new Document("user_id", userId.toString())).into(new ArrayList<>());
+                Log.d(TAG, "Found " + driveDocs.size() + " drives for user " + userId + ": " + driveDocs);
+                buckets.clear();
+                for (Document doc : driveDocs) {
+                    String type = doc.getString("type");
+                    int bucketNumber = doc.getInteger("bucket_number");
+                    Service drive = null;
+                    if ("GoogleDrive".equals(type)) {
+                        String accountEmail = doc.getString("account_email");
+                        GoogleDrive googleDrive = new GoogleDrive(context);
+                        drive = googleDrive;
+                        googleDrive.setAccountEmail(accountEmail); // Add this setter in GoogleDrive class
+                        Log.d(TAG, "Loaded GoogleDrive with email: " + accountEmail + " (Bucket " + bucketNumber + ") - authentication deferred");
+                    } else if ("Dropbox".equals(type)) {
+                        String accessToken = doc.getString("access_token");
+                        String refreshToken = doc.getString("refresh_token");
+                        DropboxService dropboxService = new DropboxService(context);
+                        drive = dropboxService;
+                        dropboxService.setAccessToken(accessToken);
+                        dropboxService.setRefreshToken(refreshToken);
+                        dropboxService.authenticate(bucketNumber, userId.toString(), new Service.AuthCallback() {
                             @Override
                             public void onAuthComplete(Object result) {
-                                synchronized (drives) {
-                                    drives.add(gd); // Add authenticated Google Drive account
-                                }
-                                Log.d(TAG, "GoogleDrive authenticated successfully.");
+                                Log.d(TAG, "Dropbox authenticated as bucket " + bucketNumber);
                             }
-
                             @Override
                             public void onAuthFailed(String error) {
-                                Log.e(TAG, "GoogleDrive authentication failed: " + error);
-                            }
-                        });
-                    } else if ("Dropbox".equals(driveType)) {
-                        String appKey = drive.getString("app_key");
-                        String appSecret = drive.getString("app_secret");
-                        DropboxService dbx = new DropboxService(context); // Pass context to DropboxService
-                        dbx.authenticate(bucketNumber, userId, new Service.AuthCallback() {
-                            @Override
-                            public void onAuthComplete(Object result) {
-                                synchronized (drives) {
-                                    drives.add(dbx); // Add Dropbox service
-                                }
-                                Log.d(TAG, "Dropbox authenticated successfully.");
-                            }
-
-                            @Override
-                            public void onAuthFailed(String error) {
-                                Log.e(TAG, "Dropbox authentication failed: " + error);
+                                Log.e(TAG, "Dropbox auth failed: " + error);
                             }
                         });
                     }
-                    return null;
+                    if (drive != null) {
+                        buckets.add(new Bucket(drive, bucketNumber, context)); // Pass context to Bucket
+                    }
                 }
-            });
-            futures.add(future);
-        }
-
-        // Wait for all futures to complete
-        for (Future<Void> future : futures) {
-            try {
-                future.get(); // Blocks until the task is complete
-            } catch (InterruptedException | ExecutionException e) {
-                Log.e(TAG, "Error loading user drives: " + e.getMessage());
+                Log.d(TAG, "Finished loading " + buckets.size() + " drives.");
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to load drives: " + e.getMessage(), e);
+            } finally {
+                initialLoadLatch.countDown();
             }
-        }
+        });
     }
-
 
     public void addDrive(Service drive, int bucketNumber, String driveType) {
-        Future<Void> future = executor.submit(new Callable<Void>() {
-            @Override
-            public Void call() {
-                drive.authenticate(bucketNumber, userId, new Service.AuthCallback() {
-                    @Override
-                    public void onAuthComplete(Object result) {
-                        synchronized (drives) {
-                            drives.add(drive);
-                        }
-                        Log.d(TAG, driveType + " added successfully as bucket " + bucketNumber);
+        executorService.submit(() -> {
+            try {
+                Bucket bucket = new Bucket(drive, bucketNumber, context);
+                synchronized (buckets) {
+                    buckets.add(bucket);
+                }
+                Document driveDoc = new Document("user_id", userId.toString()) // Store as string in drives collection
+                        .append("type", driveType)
+                        .append("bucket_number", bucketNumber);
+                if (drive instanceof GoogleDrive) {
+                    String email = ((GoogleDrive) drive).getAccountEmail();
+                    driveDoc.append("account_email", email);
+                    Log.d(TAG, "Adding Google Drive with email: " + email);
+                } else if (drive instanceof DropboxService) {
+                    driveDoc.append("access_token", ((DropboxService) drive).getAccessToken())
+                            .append("refresh_token", ((DropboxService) drive).getRefreshToken());
+                }
+                db.getDrivesCollection().insertOne(driveDoc);
+                Log.d(TAG, "Inserted drive into database: " + driveDoc);
 
-                        Document driveDoc = new Document()
-                                .append("user_id", userId)
-                                .append("type", driveType)
-                                .append("bucket_number", bucketNumber)
-                                .append("app_key", drive instanceof DropboxService ? ((DropboxService) drive).getAppKey() : null)
-                                .append("app_secret", drive instanceof DropboxService ? ((DropboxService) drive).getAppSecret() : null);
-
-                        db.getDrivesCollection().insertOne(driveDoc);
-
-                        // Update the user's drives list in MongoDB
-                        db.getUsersCollection().updateOne(
-                                new Document("_id", userId),
-                                new Document("$addToSet", new Document("drives", bucketNumber)),
-                                new UpdateOptions().upsert(true)
-                        );
-                    }
-
-                    @Override
-                    public void onAuthFailed(String error) {
-                        Log.e(TAG, "Failed to authenticate drive: " + error);
-                    }
-                });
-                return null;
+                updateUserDrivesArray();
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to add drive: " + e.getMessage(), e);
             }
         });
-
-        try {
-            future.get(); // Blocks until the task is complete
-        } catch (InterruptedException | ExecutionException e) {
-            Log.e(TAG, "Error adding drive: " + e.getMessage());
-        }
     }
 
-
-    public Map<String, Object> checkAllStorages() {
-        sortedBuckets.clear();
-        List<Map<String, Object>> storageInfo = Collections.synchronizedList(new ArrayList<>());
-        long[] totals = new long[]{0, 0}; // [totalLimit, totalUsage]
-
-        List<Future<Void>> futures = new ArrayList<>();
-        for (int i = 0; i < drives.size(); i++) {
-            final int driveIndex = i;
-            Service drive = drives.get(i);
-            Future<Void> future = executor.submit(new Callable<Void>() {
-                @Override
-                public Void call() {
-                    drive.checkStorage(new Service.StorageCallback() {
-                        @Override
-                        public void onStorageChecked(long[] storage) {
-                            long limit = storage[0];
-                            long usage = storage[1];
-                            long free = limit - usage;
-
-                            synchronized (sortedBuckets) {
-                                if (free > 0) {
-                                    sortedBuckets.add(new Bucket(free, drive, driveIndex));
-                                }
-                            }
-
-                            synchronized (totals) {
-                                totals[0] += limit;
-                                totals[1] += usage;
-                            }
-
-                            Map<String, Object> info = new HashMap<>();
-                            info.put("Drive Number", driveIndex + 1);
-                            info.put("Storage Limit (GB)", limit / Math.pow(1024, 3));
-                            info.put("Used Storage (GB)", usage / Math.pow(1024, 3));
-                            info.put("Free Storage (GB)", free / Math.pow(1024, 3));
-                            info.put("Provider", drive.getClass().getSimpleName());
-                            storageInfo.add(info);
-                        }
-
-                        @Override
-                        public void onCheckFailed(String error) {
-                            Log.e(TAG, "Error checking storage for drive " + driveIndex + ": " + error);
-                        }
-                    });
-                    return null;
+    private void updateUserDrivesArray() {
+        synchronized (buckets) {
+            List<Integer> bucketNumbers = new ArrayList<>();
+            for (Bucket bucket : buckets) {
+                if (!bucketNumbers.contains(bucket.getIndex())) {
+                    bucketNumbers.add(bucket.getIndex());
                 }
-            });
-            futures.add(future);
-        }
-
-        // Wait for all futures to complete
-        for (Future<Void> future : futures) {
-            try {
-                future.get();
-            } catch (InterruptedException | ExecutionException e) {
-                Log.e(TAG, "Error checking storages: " + e.getMessage());
             }
+            UpdateResult result = db.getUsersCollection().updateOne(
+                    new Document("_id", userId), // Use ObjectId directly
+                    new Document("$set", new Document("drives", bucketNumbers)));
+            Log.d(TAG, "User drives array updated: " + bucketNumbers + ", matched: " + result.getMatchedCount() + ", modified: " + result.getModifiedCount());
         }
-
-        Collections.sort(sortedBuckets, (a, b) -> Long.compare(b.getFreeSpace(), a.getFreeSpace()));
-
-        Map<String, Object> result = new HashMap<>();
-        result.put("storageInfo", storageInfo);
-        result.put("totalLimit", totals[0]);
-        result.put("totalUsage", totals[1]);
-        return result;
     }
 
     public List<Bucket> getSortedBuckets() {
-        return sortedBuckets;
-    }
-
-    public void updateSortedBuckets() {
-        checkAllStorages();
-    }
-
-    public void getAllAuthenticatedBuckets(Consumer<List<String>> callback) {
-        executor.execute(() -> {
-            List<String> authenticatedBuckets = new ArrayList<>();
-            try {
-                List<Document> tokens = db.getTokensCollection()
-                        .find(new Document("user_id", userId))
-                        .into(new ArrayList<>());
-                for (Document token : tokens) {
-                    authenticatedBuckets.add(String.valueOf(token.getInteger("bucket_number")));
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "Error fetching authenticated buckets: " + e.getMessage());
-            }
-            callback.accept(authenticatedBuckets);
-        });
-    }
-
-
-    public static String[] parsePartInfo(String fileName) {
-        String[] patterns = {
-                "^(.*?)\\.part(\\d+)$",                // .part0, .part1
-                "^(.*?)_part[_\\-]?(\\d+)(\\..*)?$",   // _part0, _part_1, _part-2
-                "^(.*?)\\.(\\d+)$",                    // .000, .001
-                "^(.*?)(\\d{3})(\\..*)?$"              // Generic 3-digit numbering (e.g., .001)
-        };
-
-        for (String pattern : patterns) {
-            Matcher matcher = Pattern.compile(pattern).matcher(fileName);
-            if (matcher.matches()) {
-                String base = matcher.group(1);
-                String partNum = matcher.group(2);
-                if (pattern.equals(patterns[1]) && matcher.groupCount() >= 3 && matcher.group(3) != null) {
-                    base += matcher.group(3);
-                } else if (pattern.equals(patterns[3]) && matcher.groupCount() >= 3 && matcher.group(3) != null) {
-                    base += matcher.group(3);
-                }
-                return new String[]{base, partNum};
-            }
-        }
-        return new String[]{null, null};
-    }
-
-    private List<Map<String, Object>> getFilesFromDrive(Service drive, String query) {
-        Future<List<Map<String, Object>>> future = executor.submit(new Callable<List<Map<String, Object>>>() {
-            @Override
-            public List<Map<String, Object>> call() {
-                final List<Map<String, Object>> filesList = new ArrayList<>();
-                drive.listFiles(null, query, new Service.ListFilesCallback() {
-                    @Override
-                    public void onFilesListed(List<Map<String, Object>> files) {
-                        filesList.addAll(files);
-                    }
-
-                    @Override
-                    public void onListFailed(String error) {
-                        Log.e(TAG, "Error retrieving files from " + drive.getClass().getSimpleName() + ": " + error);
-                    }
-                });
-                return filesList;
-            }
-        });
-
         try {
-            return future.get();
-        } catch (InterruptedException | ExecutionException e) {
-            Log.e(TAG, "Error getting files from drive: " + e.getMessage());
-            return new ArrayList<>();
+            initialLoadLatch.await();
+        } catch (InterruptedException e) {
+            Log.e(TAG, "Interrupted while waiting for initial load", e);
         }
-    }
-
-    public void listFilesFromAllBuckets(String query) {
-        if (drives.isEmpty()) {
-            Log.e(TAG, "No authenticated drives found. Please add a new bucket first.");
-            return;
-        }
-
-        List<Map<String, Object>> allFiles = new ArrayList<>();
-        Set<String> seenFiles = new HashSet<>();
-
-        List<Future<Void>> futures = new ArrayList<>();
-        for (Service drive : drives) {
-            Future<Void> future = executor.submit(new Callable<Void>() {
-                @Override
-                public Void call() {
-                    drive.listFiles(null, query, new Service.ListFilesCallback() {
-                        @Override
-                        public void onFilesListed(List<Map<String, Object>> files) {
-                            synchronized (allFiles) {
-                                for (Map<String, Object> file : files) {
-                                    String fileName = (String) file.get("name");
-                                    if (!seenFiles.contains(fileName)) {
-                                        allFiles.add(file);
-                                        seenFiles.add(fileName);
-                                    }
-                                }
-                            }
-                        }
-
-                        @Override
-                        public void onListFailed(String error) {
-                            Log.e(TAG, "Error listing files: " + error);
-                        }
-                    });
-                    return null;
-                }
-            });
-            futures.add(future);
-        }
-
-        // Wait for all futures to complete
-        for (Future<Void> future : futures) {
-            try {
-                future.get();
-            } catch (InterruptedException | ExecutionException e) {
-                Log.e(TAG, "Error listing files from buckets: " + e.getMessage());
-            }
-        }
-
-        Collections.sort(allFiles, (a, b) -> ((String) a.get("name")).compareToIgnoreCase((String) b.get("name")));
-        paginateFiles(allFiles, 30);
-    }
-
-    private void displayFiles(List<Map<String, Object>> allFiles, int startIndex, int pageSize) {
-        Log.d(TAG, "\nFiles (Sorted Alphabetically):\n");
-        int endIndex = Math.min(startIndex + pageSize, allFiles.size());
-        for (int i = startIndex; i < endIndex; i++) {
-            Map<String, Object> file = allFiles.get(i);
-            String name = (String) file.get("name");
-            String provider = (String) file.get("provider");
-            String sizeStr = file.get("size") instanceof String && !"Unknown".equals(file.get("size"))
-                    ? String.format("%.2f MB", Float.parseFloat((String) file.get("size")) / (1024 * 1024))
-                    : "Unknown size";
-            String path = (String) file.get("path");
-            Log.d(TAG, String.format("%d. %s (%s) - %s", i + 1, name, provider, sizeStr));
-            Log.d(TAG, "   View file: " + path + "\n");
-        }
-    }
-
-    private void paginateFiles(List<Map<String, Object>> allFiles, int pageSize) {
-        int totalFiles = allFiles.size();
-        int startIndex = 0;
-
-        while (startIndex < totalFiles) {
-            displayFiles(allFiles, startIndex, pageSize);
-            startIndex += pageSize;
-            // In Python, there's an interactive prompt; here, we log all pages at once
-            // For interactivity, you'd need a UI component in Android
+        synchronized (buckets) {
+            List<Bucket> sortedBuckets = new ArrayList<>(buckets);
+            Collections.sort(sortedBuckets, (b1, b2) -> Integer.compare(b1.getIndex(), b2.getIndex()));
+            Log.d(TAG, "Returning sorted buckets: " + sortedBuckets.size());
+            return sortedBuckets;
         }
     }
 
     public static class Bucket {
-        private final long freeSpace;
         private final Service drive;
         private final int index;
+        private final Context context; // Added to provide context for API calls
 
-        public Bucket(long freeSpace, Service drive, int index) {
-            this.freeSpace = freeSpace;
+        Bucket(Service drive, int index, Context context) {
             this.drive = drive;
             this.index = index;
-        }
-
-        public long getFreeSpace() {
-            return freeSpace;
+            this.context = context;
         }
 
         public Service getDrive() {
@@ -415,16 +165,40 @@ public class DriveManager {
         public int getIndex() {
             return index;
         }
-    }
 
-    public void shutdown() {
-        executor.shutdown();
-        for (Service drive : drives) {
+        public long getFreeSpace() {
             if (drive instanceof GoogleDrive) {
-                ((GoogleDrive) drive).shutdown();
+                Drive googleDriveService = GoogleDriveHelper.getDriveService(context, ((GoogleDrive) drive).getAccountEmail());
+                if (googleDriveService != null) {
+                    try {
+                        com.google.api.services.drive.model.About about = googleDriveService.about().get()
+                                .setFields("storageQuota")
+                                .execute();
+                        long limit = about.getStorageQuota().getLimit() != null ? about.getStorageQuota().getLimit() : Long.MAX_VALUE;
+                        long usage = about.getStorageQuota().getUsage() != null ? about.getStorageQuota().getUsage() : 0;
+                        return limit - usage;
+                    } catch (Exception e) {
+                        Log.e(TAG, "Failed to get Google Drive free space: " + e.getMessage());
+                        return -1; // Unknown
+                    }
+                }
             } else if (drive instanceof DropboxService) {
-                // DropboxService shuts down in finalize, but could add explicit shutdown
+                DbxClientV2 dropboxClient = DropboxHelper.getDropboxClient(context,
+                        ((DropboxService) drive).getAccessToken(), ((DropboxService) drive).getRefreshToken());
+                if (dropboxClient != null) {
+                    try {
+                        com.dropbox.core.v2.users.SpaceUsage spaceUsage = dropboxClient.users().getSpaceUsage();
+                        long used = spaceUsage.getUsed();
+                        long allocated = spaceUsage.getAllocation().getIndividualValue() != null ?
+                                spaceUsage.getAllocation().getIndividualValue().getAllocated() : Long.MAX_VALUE;
+                        return allocated - used;
+                    } catch (DbxException e) {
+                        Log.e(TAG, "Failed to get Dropbox free space: " + e.getMessage());
+                        return -1; // Unknown
+                    }
+                }
             }
+            return -1; // Unknown if drive is null or unrecognized
         }
     }
 }

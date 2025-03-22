@@ -45,7 +45,7 @@
         app:layout_constraintWidth_percent="0.8">
 
         <Button
-            android:id="@+id/btn_google_drive"
+            android:id="@+id/btn_drive"
             android:layout_width="262dp"
             android:layout_height="65dp"
             android:background="@drawable/rounded_button"
@@ -65,9 +65,9 @@
             android:layout_marginEnd="20dp"
             android:src="@drawable/ic_google_drive"
             android:contentDescription="@string/googleDrive"
-            app:layout_constraintBottom_toBottomOf="@+id/btn_google_drive"
-            app:layout_constraintEnd_toStartOf="@+id/btn_google_drive"
-            app:layout_constraintTop_toTopOf="@+id/btn_google_drive" />
+            app:layout_constraintBottom_toBottomOf="@+id/btn_drive"
+            app:layout_constraintEnd_toStartOf="@+id/btn_drive"
+            app:layout_constraintTop_toTopOf="@+id/btn_drive" />
 
         <androidx.constraintlayout.widget.Guideline
             android:id="@+id/guideline3"

@@ -16,7 +16,6 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        //maven { url = uri("https://mvnrepository.com/artifact/com.dropbox.core/dropbox-core-sdk") }
     }
 }
 

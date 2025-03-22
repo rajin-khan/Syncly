@@ -13,7 +13,7 @@
     <string name="search_files">Search Files</string>
     <string name="add_bucket">Add New Bucket</string>
     <string name="upload">Upload Files</string>
-    <string name="exit">Logout</string>
+    <string name="exit">Exit</string>
     <string name="toggle_password">Toggle Password Visibility</string>
     <string name="username">Username</string>
     <string name="register_here">Register Here</string>
@@ -21,17 +21,19 @@
     <string name="choose">CHOOSE A STORAGE OPTION</string>
     <string name="googleDrive">Google Drive</string>
     <string name="dropbox">Dropbox</string>
-    <string name="dropbox_app_key">f6dtaq144frn9t1</string>
-    <string name="dropbox_app_secret">lmnfzl4l80z4dxw</string>
-    <string name="choose_account">Choose Your Account</string>
-    <string name="choose_gdrive_account">Choose your Google Drive account</string>
-    <string name="choose_db_account">Choose your Dropbox account</string>
-    <string name="select_file">Select File to Upload</string>
-    <string name="choose_file">Choose File ⬆️</string>
+    <string name="dropbox_app_key">w84emdpux17qpnj</string>
+    <string name="dropbox_app_secret">x6ce7dtmj51xqc7</string>
+    <string name="choose_db_account">Choose Dropbox Account</string>
+    <string name="choose_account">Choose Account</string>
+    <string name="choose_gdrive_account">Choose Google Drive Account</string>
+    <string name="new_message">New Here? Register Instead!</string>
+    <string name="select_file">Select File</string>
+    <string name="choose_file">Choose File</string>
     <string name="no_file_selected">No File Selected</string>
     <string name="choose_where">Choose Where to Upload</string>
     <string name="upload_btn_gdrive">Upload to Google Drive</string>
     <string name="upload_btn_db">Upload to Dropbox</string>
-    <string name="new_message">New here? Register</string>
+    <string name="upload_btn_drive">Upload to Syncly</string>
+    <string name="btn_upload">Upload To drive</string>
 
 </resources>

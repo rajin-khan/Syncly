@@ -1,14 +1,10 @@
 [versions]
-agp = "8.8.2"
-desugar_jdk_libs = "2.1.5"
-dropboxAndroidSdk = "3.1.0"
+agp = "8.8.0"
 dropboxCoreSdk = "7.0.0"
-googleApiClientAndroidVersion = "2.7.2"
-googleAuthLibraryOauth2HttpVersion = "1.30.0"
-mongodbDriverSyncVersion = "4.10.1"
-googleApiClientAndroid = "2.7.2"
+play-services-auth = "20.7.0"
+googleApiClientAndroid = "2.2.0"
 googleApiServicesDrive = "v3-rev20230822-2.0.0"
-googleAuthLibraryOauth2Http = "1.30.0"
+googleAuthLibraryOauth2Http = "1.23.0"
 googleHttpClientAndroid = "1.43.3"
 junit = "4.13.2"
 junitVersion = "1.2.1"
@@ -18,28 +14,19 @@ material = "1.12.0"
 kotlin = "2.0.0"
 lifecycleRuntimeKtx = "2.8.7"
 activityCompose = "1.10.1"
-composeBom = "2025.03.00"
+composeBom = "2024.04.01"
 activity = "1.10.1"
 constraintlayout = "2.2.1"
 googleGmsGoogleServices = "4.4.2"
-mongodbDriverSync = "4.10.1"
-mongoJavaDriver = "3.12.10"
-play-services-auth-version = "21.3.0"
+
+mongodbDriverSync = "4.3.4"
 slf4jSimple = "1.7.36"
 
 [libraries]
-desugar_jdk_libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar_jdk_libs" }
-dropbox-android-sdk = { module = "com.dropbox.core:dropbox-android-sdk", version.ref = "dropboxAndroidSdk" }
 dropbox-core-sdk = { module = "com.dropbox.core:dropbox-core-sdk", version.ref = "dropboxCoreSdk" }
-#noinspection SimilarGradleDependency
 google-api-client-android = { module = "com.google.api-client:google-api-client-android", version.ref = "googleApiClientAndroid" }
-#noinspection SimilarGradleDependency
-google-api-client-android-v272 = { module = "com.google.api-client:google-api-client-android", version.ref = "googleApiClientAndroidVersion" }
 google-api-services-drive = { module = "com.google.apis:google-api-services-drive", version.ref = "googleApiServicesDrive" }
-#noinspection SimilarGradleDependency
 google-auth-library-oauth2-http = { module = "com.google.auth:google-auth-library-oauth2-http", version.ref = "googleAuthLibraryOauth2Http" }
-#noinspection SimilarGradleDependency
-google-auth-library-oauth2-http-v1300 = { module = "com.google.auth:google-auth-library-oauth2-http", version.ref = "googleAuthLibraryOauth2HttpVersion" }
 google-http-client-android = { module = "com.google.http-client:google-http-client-android", version.ref = "googleHttpClientAndroid" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
@@ -49,12 +36,7 @@ material = { group = "com.google.android.material", name = "material", version.r
 lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
-#noinspection SimilarGradleDependency
-mongo-java-driver = { module = "org.mongodb:mongo-java-driver", version.ref = "mongoJavaDriver" }
 mongodb-driver-sync = { module = "org.mongodb:mongodb-driver-sync", version.ref = "mongodbDriverSync" }
-#noinspection SimilarGradleDependency
-mongodb-driver-sync-v4101 = { module = "org.mongodb:mongodb-driver-sync", version.ref = "mongodbDriverSyncVersion" }
-play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "play-services-auth-version" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4jSimple" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4jSimple" }
 ui = { group = "androidx.compose.ui", name = "ui" }
@@ -67,8 +49,10 @@ material3 = { group = "androidx.compose.material3", name = "material3" }
 activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 google-gms-google-services = { id = "com.google.gms.google-services", version.ref = "googleGmsGoogleServices" }
+

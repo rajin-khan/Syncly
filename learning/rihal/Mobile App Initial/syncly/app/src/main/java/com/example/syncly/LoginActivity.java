@@ -15,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.mongodb.client.MongoCollection;
 import org.bson.Document;
+import org.bson.types.ObjectId;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -38,7 +39,6 @@ public class LoginActivity extends AppCompatActivity {
         loginButton = findViewById(R.id.btn_login);
         registerButton = findViewById(R.id.btn_register);
 
-        // Toggle Password Visibility
         togglePasswordVisibility.setOnClickListener(v -> {
             if (isPasswordVisible) {
                 passwordInput.setTransformationMethod(PasswordTransformationMethod.getInstance());
@@ -51,7 +51,6 @@ public class LoginActivity extends AppCompatActivity {
             passwordInput.setSelection(passwordInput.getText().length());
         });
 
-        // Handle login button click
         loginButton.setOnClickListener(v -> {
             String username = usernameInput.getText().toString().trim();
             String password = passwordInput.getText().toString().trim();
@@ -64,61 +63,57 @@ public class LoginActivity extends AppCompatActivity {
         });
 
         registerButton.setOnClickListener(v -> {
-            //Start button clicked, navigate to RegisterActivity
             Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
             startActivity(intent);
         });
     }
 
-    // AsyncTask to run login verification in the background
-    private class LoginUserTask extends AsyncTask<String, Void, Boolean> {
+    private class LoginUserTask extends AsyncTask<String, Void, String> { // Return ObjectId as String
         private String username;
         private String errorMessage = "";
 
         @Override
-        protected Boolean doInBackground(String... params) {
+        protected String doInBackground(String... params) {
             username = params[0];
             String password = params[1];
 
             try {
                 MongoCollection<Document> usersCollection = Database.getInstance().getUsersCollection();
 
-                // Find the user in the database
                 Document user = usersCollection.find(new Document("username", username)).first();
                 if (user == null) {
                     errorMessage = "User not found. Please register first.";
-                    return false;
+                    return null;
                 }
 
-                // Hash the input password
                 String hashedPassword = hashPassword(password);
                 if (hashedPassword == null) {
                     errorMessage = "Error hashing password";
-                    return false;
+                    return null;
                 }
 
-                // Verify password
                 if (!user.getString("password").equals(hashedPassword)) {
                     errorMessage = "Incorrect password. Please try again.";
-                    return false;
+                    return null;
                 }
 
                 Log.d(TAG, "User '" + username + "' logged in successfully.");
-                return true;
+                return user.getObjectId("_id").toHexString(); // Return ObjectId
 
             } catch (Exception e) {
                 Log.e(TAG, "Error during login: " + e.getMessage());
                 errorMessage = "Login failed: " + e.getMessage();
-                return false;
+                return null;
             }
         }
 
         @Override
-        protected void onPostExecute(Boolean success) {
-            if (success) {
+        protected void onPostExecute(String objectId) {
+            if (objectId != null) {
                 Toast.makeText(LoginActivity.this, "Login successful", Toast.LENGTH_SHORT).show();
                 Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
-                intent.putExtra("userId", username); // Pass the userId to HomeActivity
+                intent.putExtra("userId", objectId); // Pass ObjectId as userId
+                intent.putExtra("username", username); // Pass username for intent extras
                 startActivity(intent);
                 finish();
             } else {

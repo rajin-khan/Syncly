@@ -2,14 +2,23 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
-    <uses-permission android:name="android.permission.MANAGE_ACCOUNTS" />
-    <uses-permission android:name="android.permission.USE_CREDENTIALS" />
+    <uses-permission android:name="android.permission.GET_ACCOUNTS" tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.MANAGE_ACCOUNTS" tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.USE_CREDENTIALS" tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+
+    <!-- Queries for Android 11+ to allow browser intents -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+    </queries>
 
     <application
         android:allowBackup="true"
@@ -21,31 +30,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Syncly"
         tools:targetApi="31">
-        <activity
-            android:name=".ViewFilesActivity"
-            android:exported="false" />
-        <activity
-            android:name=".DropboxAccountActivity"
-            android:exported="true"
-            android:launchMode="singleTask">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
 
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data
-                    android:host="www.dropbox.com"
-                    android:path="/1/oauth2/redirect"
-                    android:scheme="https" />
-            </intent-filter>
-        </activity>
-        <activity
-            android:name=".UploadFilesActivity"
-            android:exported="false" />
-        <activity
-            android:name=".HomeActivity"
-            android:exported="false" />
+        <!-- Main Activity (Launcher) -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -53,22 +39,50 @@
             android:theme="@style/Theme.Syncly">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Login and Register Activities -->
+        <activity
+            android:name=".LoginActivity"
+            android:exported="false" />
         <activity
             android:name=".RegisterActivity"
             android:exported="false" />
+
+        <!-- Home and Utility Activities -->
         <activity
-            android:name=".LoginActivity"
+            android:name=".HomeActivity"
             android:exported="false" />
         <activity
             android:name=".AddBucketActivity"
             android:exported="false" />
         <activity
+            android:name=".ViewFilesActivity"
+            android:exported="false" />
+        <activity
+            android:name=".UploadFilesActivity"
+            android:exported="false" />
+
+        <!-- Google Drive Account Activity -->
+        <activity
             android:name=".GoogleDriveAccountActivity"
             android:exported="false" />
-    </application>
 
+        <!-- Dropbox Account Activity with OAuth Redirect -->
+        <activity
+            android:name=".DropboxAccountActivity"
+            android:exported="true"
+            android:launchMode="singleTask">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="syncly"
+                    android:host="dropbox-auth" />
+            </intent-filter>
+        </activity>
+    </application>
 </manifest>

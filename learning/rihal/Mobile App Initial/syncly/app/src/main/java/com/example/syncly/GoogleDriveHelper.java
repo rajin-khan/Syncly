@@ -8,9 +8,6 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.DriveScopes;
-import com.mongodb.client.model.UpdateOptions;
-import com.mongodb.client.MongoCollection;
-import org.bson.Document;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
@@ -19,40 +16,29 @@ public class GoogleDriveHelper {
     private static final String TAG = "GoogleDriveHelper";
     private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
 
-    public static Drive getDriveService(Context context, String userId) {
+    public static Drive getDriveService(Context context, String accountEmail) {
         try {
-            if (userId == null || userId.isEmpty()) {
-                Log.e(TAG, "Google Account is null or empty!");
+            if (accountEmail == null || accountEmail.isEmpty()) {
+                Log.e(TAG, "Google Account email is null or empty!");
                 return null;
             }
 
             GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(
-                    context, Collections.singletonList(DriveScopes.DRIVE_FILE)
-            );
-            credential.setSelectedAccountName(userId);
+                    context, Collections.singletonList(DriveScopes.DRIVE)); // Changed to DRIVE
+            credential.setSelectedAccountName(accountEmail);
+            Log.d(TAG, "Credential set for account email: " + accountEmail);
 
-            return new Drive.Builder(
+            Drive drive = new Drive.Builder(
                     GoogleNetHttpTransport.newTrustedTransport(),
                     JSON_FACTORY,
                     credential
             ).setApplicationName("Syncly").build();
+            Log.d(TAG, "Drive service initialized successfully for email: " + accountEmail);
+            return drive;
 
         } catch (IOException | GeneralSecurityException e) {
             Log.e(TAG, "Error initializing Google Drive API", e);
             return null;
         }
-    }
-
-    public void storeGoogleDriveToken(String userId, int bucketNumber, String accessToken, String refreshToken) {
-        MongoCollection<Document> tokensCollection = Database.getInstance().getTokensCollection();
-        Document tokenDoc = new Document("user_id", userId)
-                .append("bucket_number", bucketNumber)
-                .append("access_token", accessToken)
-                .append("refresh_token", refreshToken);
-        tokensCollection.updateOne(
-                new Document("user_id", userId).append("bucket_number", bucketNumber),
-                new Document("$set", tokenDoc),
-                new UpdateOptions().upsert(true)
-        );
     }
 }

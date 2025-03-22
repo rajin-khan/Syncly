@@ -8,7 +8,6 @@ import com.dropbox.core.oauth.DbxCredential;
 import com.dropbox.core.v2.DbxClientV2;
 import com.dropbox.core.v2.files.FileMetadata;
 import com.dropbox.core.v2.files.ListFolderResult;
-import com.mongodb.client.model.UpdateOptions;
 import org.bson.Document;
 
 import java.util.ArrayList;
@@ -22,6 +21,8 @@ public class DropboxService extends Service {
     private DbxClientV2 service;
     private final String appKey;
     private final String appSecret;
+    private String accessToken;
+    private String refreshToken;
     private final Database db = Database.getInstance();
     private static final String TAG = "DropboxService";
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -41,65 +42,99 @@ public class DropboxService extends Service {
         return appSecret;
     }
 
+    public String getAccessToken() {
+        return accessToken;
+    }
+
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
+    }
+    public String getRefreshToken() {
+        return refreshToken;
+    }
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
+    }
+
+    public boolean isAuthenticated() {
+        // Add logic to check if the client is ready, e.g., if accessToken is valid
+        return accessToken != null && !accessToken.isEmpty();
+    }
     @Override
     public void authenticate(final int bucketNumber, final String userId, final AuthCallback callback) {
         executor.execute(() -> {
             try {
-                Document tokenData = db.getTokensCollection()
+                Document driveDoc = db.getDrivesCollection()
                         .find(new Document("user_id", userId).append("bucket_number", bucketNumber))
                         .first();
-
-                DbxCredential creds = null;
-                if (tokenData != null) {
-                    try {
-                        creds = new DbxCredential(
-                                tokenData.getString("access_token"),
-                                null,
-                                tokenData.getString("refresh_token"),
-                                appKey,
-                                appSecret
-                        );
-                        service = new DbxClientV2(DbxRequestConfig.newBuilder("Syncly").build(), creds);
-                        service.users().getCurrentAccount();
-                        Log.i(TAG, "Dropbox client initialized successfully with existing token.");
-                    } catch (Exception e) {
-                        Log.e(TAG, "Error loading token: " + e.getMessage() + ". Re-authenticating.");
-                        creds = null;
-                    }
+                if (driveDoc != null) {
+                    accessToken = driveDoc.getString("access_token");
+                    refreshToken = driveDoc.getString("refresh_token");
+                }
+                if (accessToken == null) {
+                    Log.e(TAG, "No Dropbox access token found in database for bucket " + bucketNumber);
+                    throw new IllegalStateException("Please link a Dropbox account first");
                 }
 
-                if (creds == null || service == null) {
-                    Log.i(TAG, "No valid token found. Perform OAuth flow externally and provide tokens.");
-                    String accessToken = "your_access_token_here"; // Replace with real token from OAuth
-                    String refreshToken = "your_refresh_token_here"; // Replace with real token from OAuth
-
-                    creds = new DbxCredential(accessToken, null, refreshToken, appKey, appSecret);
-                    service = new DbxClientV2(DbxRequestConfig.newBuilder("Syncly").build(), creds);
-
-                    db.getTokensCollection().updateOne(
-                            new Document("user_id", userId).append("bucket_number", bucketNumber),
-                            new Document("$set", new Document()
-                                    .append("access_token", accessToken)
-                                    .append("refresh_token", refreshToken)
-                                    .append("app_key", appKey)
-                                    .append("app_secret", appSecret)),
-                            new UpdateOptions().upsert(true)
-                    );
-                    Log.i(TAG, "New Dropbox tokens stored in MongoDB.");
-                }
-
-                db.getUsersCollection().updateOne(
-                        new Document("_id", userId),
-                        new Document("$addToSet", new Document("drives", bucketNumber)),
-                        new UpdateOptions().upsert(true)
-                );
-
+                DbxCredential creds = new DbxCredential(accessToken, -1L, refreshToken, appKey, appSecret);
+                service = new DbxClientV2(DbxRequestConfig.newBuilder("Syncly").build(), creds);
+                service.users().getCurrentAccount();
+                Log.d(TAG, "Dropbox authenticated successfully for bucket " + bucketNumber);
                 callback.onAuthComplete(service);
+            } catch (DbxException e) {
+                Log.e(TAG, "Dropbox authentication failed: " + e.getMessage(), e);
+                if (e.getMessage().contains("expired")) {
+                    refreshAccessToken(callback, bucketNumber, userId);
+                } else {
+                    callback.onAuthFailed("Invalid Dropbox token: " + e.getMessage());
+                }
             } catch (Exception e) {
-                Log.e(TAG, "Auth task failed: " + e.getMessage());
+                Log.e(TAG, "Unexpected error during authentication: " + e.getMessage(), e);
                 callback.onAuthFailed(e.getMessage());
             }
         });
+    }
+
+    private void refreshAccessToken(AuthCallback callback, int bucketNumber, String userId) {
+        try {
+            DbxCredential creds = new DbxCredential(accessToken, -1L, refreshToken, appKey, appSecret);
+            creds.refresh(DbxRequestConfig.newBuilder("Syncly").build());
+            accessToken = creds.getAccessToken();
+            refreshToken = creds.getRefreshToken();
+            service = new DbxClientV2(DbxRequestConfig.newBuilder("Syncly").build(), creds);
+
+            // Update MongoDB with new tokens
+            db.getDrivesCollection().updateOne(
+                    new Document("user_id", userId).append("bucket_number", bucketNumber),
+                    new Document("$set", new Document("access_token", accessToken).append("refresh_token", refreshToken))
+            );
+            Log.d(TAG, "Dropbox token refreshed successfully for bucket " + bucketNumber);
+            callback.onAuthComplete(service);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to refresh Dropbox token: " + e.getMessage(), e);
+            callback.onAuthFailed("Failed to refresh Dropbox token: " + e.getMessage());
+        }
+    }
+
+    private void listFilesRecursively(String path, List<Map<String, Object>> filesList) throws DbxException {
+        ListFolderResult result = service.files().listFolder(path);
+        while (true) {
+            for (com.dropbox.core.v2.files.Metadata entry : result.getEntries()) {
+                if (entry instanceof FileMetadata) {
+                    FileMetadata file = (FileMetadata) entry;
+                    Map<String, Object> fileInfo = new HashMap<>();
+                    fileInfo.put("name", file.getName());
+                    fileInfo.put("size", file.getSize());
+                    fileInfo.put("path", "https://www.dropbox.com/home" + file.getPathDisplay());
+                    fileInfo.put("provider", "Dropbox");
+                    filesList.add(fileInfo);
+                } else if (entry instanceof com.dropbox.core.v2.files.FolderMetadata) {
+                    listFilesRecursively(entry.getPathLower(), filesList);
+                }
+            }
+            if (!result.getHasMore()) break;
+            result = service.files().listFolderContinue(result.getCursor());
+        }
     }
 
     @Override
@@ -109,24 +144,10 @@ public class DropboxService extends Service {
                 if (service == null) {
                     throw new IllegalStateException("Dropbox service not authenticated. Call authenticate() first.");
                 }
-
                 List<Map<String, Object>> filesList = new ArrayList<>();
-                ListFolderResult result = service.files().listFolder("");
-                while (true) {
-                    for (com.dropbox.core.v2.files.Metadata entry : result.getEntries()) {
-                        if (entry instanceof FileMetadata) {
-                            FileMetadata file = (FileMetadata) entry;
-                            String fileLink = "https://www.dropbox.com/home" + file.getPathDisplay();
-                            Map<String, Object> fileInfo = new HashMap<>();
-                            fileInfo.put("name", file.getName());
-                            fileInfo.put("size", file.getSize());
-                            fileInfo.put("path", fileLink);
-                            fileInfo.put("provider", "Dropbox");
-                            filesList.add(fileInfo);
-                        }
-                    }
-                    if (!result.getHasMore()) break;
-                    result = service.files().listFolderContinue(result.getCursor());
+                listFilesRecursively("", filesList);
+                if (maxResults != null && filesList.size() > maxResults) {
+                    filesList = filesList.subList(0, maxResults);
                 }
                 callback.onFilesListed(filesList);
             } catch (DbxException e) {
@@ -145,7 +166,6 @@ public class DropboxService extends Service {
                     callback.onCheckFailed("Service not authenticated.");
                     return;
                 }
-
                 com.dropbox.core.v2.users.SpaceUsage usage = service.users().getSpaceUsage();
                 long limit = usage.getAllocation().getIndividualValue() != null
                         ? usage.getAllocation().getIndividualValue().getAllocated()

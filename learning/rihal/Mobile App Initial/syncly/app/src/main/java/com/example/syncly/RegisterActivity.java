@@ -15,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.mongodb.client.MongoCollection;
 import org.bson.Document;
 import org.bson.types.BasicBSONList;
+import org.bson.types.ObjectId;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -24,7 +25,7 @@ public class RegisterActivity extends AppCompatActivity {
     private EditText usernameInput, passwordInput;
     private Button registerButton;
     private ImageView togglePasswordVisibility;
-    private boolean isPasswordVisible = false; // Default state (hidden)
+    private boolean isPasswordVisible = false;
     private static final String TAG = "MongoDB";
 
     @Override
@@ -37,7 +38,6 @@ public class RegisterActivity extends AppCompatActivity {
         registerButton = findViewById(R.id.btn_register);
         togglePasswordVisibility = findViewById(R.id.toggle_password_visibility);
 
-        // Toggle Password Visibility
         togglePasswordVisibility.setOnClickListener(v -> {
             if (isPasswordVisible) {
                 passwordInput.setTransformationMethod(PasswordTransformationMethod.getInstance());
@@ -61,52 +61,49 @@ public class RegisterActivity extends AppCompatActivity {
         });
     }
 
-    // AsyncTask to run database operations in the background
-    private class RegisterUserTask extends AsyncTask<String, Void, Boolean> {
+    private class RegisterUserTask extends AsyncTask<String, Void, String> { // Return ObjectId as String
         private String username;
         private String errorMessage = "";
 
         @Override
-        protected Boolean doInBackground(String... params) {
+        protected String doInBackground(String... params) {
             username = params[0];
             String password = params[1];
 
             try {
                 MongoCollection<Document> usersCollection = Database.getInstance().getUsersCollection();
 
-                // Check if username already exists
                 Document existingUser = usersCollection.find(new Document("username", username)).first();
                 if (existingUser != null) {
                     errorMessage = "Username already taken";
-                    return false;
+                    return null;
                 }
 
-                // Hash the password
                 String hashedPassword = hashPassword(password);
                 if (hashedPassword == null) {
                     errorMessage = "Error hashing password";
-                    return false;
+                    return null;
                 }
 
-                // Store user in MongoDB
                 Document newUser = new Document("username", username)
                         .append("password", hashedPassword)
-                        .append("drives", new BasicBSONList()); // Empty list for drives
+                        .append("drives", new BasicBSONList());
                 usersCollection.insertOne(newUser);
-                return true;
+                return newUser.getObjectId("_id").toHexString(); // Return the generated ObjectId
 
             } catch (Exception e) {
                 Log.e(TAG, "Error during registration: " + e.getMessage());
                 errorMessage = "Registration failed: " + e.getMessage();
-                return false;
+                return null;
             }
         }
 
         @Override
-        protected void onPostExecute(Boolean success) {
-            if (success) {
+        protected void onPostExecute(String objectId) {
+            if (objectId != null) {
                 Toast.makeText(RegisterActivity.this, "Registration is complete", Toast.LENGTH_SHORT).show();
                 Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
+                intent.putExtra("username", username); // Pass username for login
                 startActivity(intent);
                 finish();
             } else {
@@ -119,7 +116,7 @@ public class RegisterActivity extends AppCompatActivity {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(password.getBytes());
-            return android.util.Base64.encodeToString(hash, android.util.Base64.NO_WRAP); // Fixed for older Android versions
+            return android.util.Base64.encodeToString(hash, android.util.Base64.NO_WRAP);
         } catch (NoSuchAlgorithmException e) {
             Log.e(TAG, "Password hashing error: " + e.getMessage());
             return null;

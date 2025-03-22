@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+
 }
 
 android {
@@ -36,14 +37,12 @@ android {
         resources {
             excludes += "META-INF/INDEX.LIST"
             excludes += "META-INF/DEPENDENCIES"
-            excludes += "META-INF/native-image/org.mongodb/bson/native-image.properties"
         }
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
-        isCoreLibraryDesugaringEnabled = true
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 
     buildFeatures {
@@ -71,17 +70,13 @@ dependencies {
     androidTestImplementation(libs.ui.test.junit4)
     debugImplementation(libs.ui.tooling)
     debugImplementation(libs.ui.test.manifest)
-    implementation(libs.play.services.auth)
-    implementation(libs.google.auth.library.oauth2.http.v1300)
-    implementation(libs.google.http.client.android)
-    implementation(libs.google.api.client.android.v272)
-    implementation(libs.google.api.services.drive)
-    implementation(libs.mongodb.driver.sync.v4101)
-    //implementation (libs.mongo.java.driver)
-    implementation(libs.dropbox.core.sdk) // Check for the latest version
-    //implementation("com.dropbox.core:dropbox-core-sdk:5.4.3")   //Older version for .android.Auth
-    //implementation(libs.dropbox.android.sdk)
-    implementation(libs.slf4j.api)
-    implementation(libs.slf4j.simple)
-    coreLibraryDesugaring(libs.desugar.jdk.libs)
+    implementation ("com.google.android.gms:play-services-auth:20.7.0")
+    implementation("com.google.auth:google-auth-library-oauth2-http:1.23.0")
+    implementation("com.google.http-client:google-http-client-android:1.43.3")
+    implementation("com.google.api-client:google-api-client-android:2.2.0")
+    implementation("com.google.apis:google-api-services-drive:v3-rev20230822-2.0.0")
+    implementation("org.mongodb:mongodb-driver-sync:4.3.4")
+    implementation("com.dropbox.core:dropbox-core-sdk:7.0.0") // Check for the latest version
+    implementation("org.slf4j:slf4j-api:1.7.36")
+    implementation("org.slf4j:slf4j-simple:1.7.36")
 }

@@ -1,11 +1,11 @@
 package com.example.syncly;
 
+import android.util.Log;
+
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.UpdateOptions;
-
 import org.bson.Document;
 
 public class Database {
@@ -34,7 +34,6 @@ public class Database {
     public synchronized void initialize() {
         if (isInitialized) return;
         try {
-            // Use 10.0.2.2 for emulator access to localhost
             client = MongoClients.create("mongodb://10.0.2.2:27017/?connectTimeoutMS=30000&socketTimeoutMS=30000");
             database = client.getDatabase("Syncly");
 
@@ -45,11 +44,10 @@ public class Database {
 
             Document ping = new Document("ping", 1);
             Document result = database.runCommand(ping);
-            System.out.println("Connected to MongoDB successfully. Ping result: " + result.toJson());
+            Log.d("Database", "Connected to MongoDB successfully. Ping result: " + result.toJson());
             isInitialized = true;
         } catch (Exception e) {
-            System.err.println("Failed to connect to MongoDB: " + e.getMessage());
-            e.printStackTrace();
+            Log.e("Database", "Failed to connect to MongoDB: " + e.getMessage(), e);
             isInitialized = false;
             throw e;
         }
@@ -77,20 +75,6 @@ public class Database {
     public MongoCollection<Document> getDrivesCollection() {
         if (!isInitialized) initialize();
         return drivesCollection;
-    }
-
-    public void storeGoogleDriveToken(String userId, int bucketNumber, String accessToken, String refreshToken) {
-        MongoCollection<Document> tokensCollection = getTokensCollection();
-        Document tokenDoc = new Document("user_id", userId)
-                .append("bucket_number", bucketNumber)
-                .append("type", "GoogleDrive")
-                .append("access_token", accessToken)
-                .append("refresh_token", refreshToken);
-        tokensCollection.updateOne(
-                new Document("user_id", userId).append("bucket_number", bucketNumber),
-                new Document("$set", tokenDoc),
-                new UpdateOptions().upsert(true)
-        );
     }
 
     public void closeConnection() {
