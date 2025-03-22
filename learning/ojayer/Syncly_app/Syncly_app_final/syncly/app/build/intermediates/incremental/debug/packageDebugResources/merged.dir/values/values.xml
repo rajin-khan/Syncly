@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="white">#FFFFFFFF</color>
+    <string name="add_bucket">Add New Bucket</string>
+    <string name="app_name">Syncly</string>
+    <string name="btn_upload">Upload To drive</string>
+    <string name="choose">CHOOSE A STORAGE OPTION</string>
+    <string name="choose_account">Choose Account</string>
+    <string name="choose_db_account">Choose Dropbox Account</string>
+    <string name="choose_file">Choose File</string>
+    <string name="choose_gdrive_account">Choose Google Drive Account</string>
+    <string name="choose_where">Choose Where to Upload</string>
+    <string name="dropbox">Dropbox</string>
+    <string name="dropbox_app_key">w84emdpux17qpnj</string>
+    <string name="dropbox_app_secret">x6ce7dtmj51xqc7</string>
+    <string name="email">Email</string>
+    <string name="exit">Exit</string>
+    <string name="googleDrive">Google Drive</string>
+    <string name="login">LOGIN</string>
+    <string name="new_message">New Message</string>
+    <string name="no_file_selected">No File Selected</string>
+    <string name="or">or</string>
+    <string name="password">Password</string>
+    <string name="register_button">REGISTER</string>
+    <string name="register_here">Register Here</string>
+    <string name="search_files">Search Files</string>
+    <string name="select_file">Select File</string>
+    <string name="start_here">START HERE</string>
+    <string name="syncly_logo_desc">Syncly Logo</string>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="toggle_password">Toggle Password Visibility</string>
+    <string name="upload">Upload Files</string>
+    <string name="upload_btn_db">Upload to Dropbox</string>
+    <string name="upload_btn_drive">Upload to Syncly</string>
+    <string name="upload_btn_gdrive">Upload to Google Drive</string>
+    <string name="username">Username</string>
+    <string name="view_files">View Files</string>
+    <string name="welcome_back">WELCOME BACK</string>
+    <string name="welcome_message">WELCOME TO SYNCLY MENU.\n\t\t\t\t\tCHOOSE AN OPTION</string>
+    <style name="Theme.Syncly" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+        
+        <item name="colorPrimary">@color/black</item>
+        <item name="colorPrimaryVariant">@color/black</item>
+        <item name="colorOnPrimary">@color/white</item>
+        
+        <item name="colorSecondary">@color/teal_200</item>
+        <item name="colorSecondaryVariant">@color/teal_700</item>
+        <item name="colorOnSecondary">@color/black</item>
+        
+        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+        
+    </style>
+</resources>

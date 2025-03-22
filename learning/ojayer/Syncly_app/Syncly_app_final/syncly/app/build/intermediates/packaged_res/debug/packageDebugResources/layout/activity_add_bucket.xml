@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:gravity="center"
+    tools:context=".AddBucketActivity">
+
+    <!-- Logo Image -->
+    <ImageView
+        android:id="@+id/logo"
+        android:layout_width="293dp"
+        android:layout_height="274dp"
+        android:layout_marginTop="150dp"
+        android:contentDescription="@string/syncly_logo_desc"
+        android:src="@drawable/logo"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Choose Storage Text -->
+    <TextView
+        android:id="@+id/choose_storage_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/choose"
+        android:textColor="@color/black"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/logo" />
+
+    <!-- Google Drive Button -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/google_drive_container"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:layout_marginTop="100dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/logo"
+        app:layout_constraintWidth_percent="0.8">
+
+        <Button
+            android:id="@+id/btn_drive"
+            android:layout_width="262dp"
+            android:layout_height="65dp"
+            android:background="@drawable/rounded_button"
+            android:drawableStart="@drawable/ic_google_drive"
+            android:text="@string/googleDrive"
+            android:textAllCaps="true"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/guideline3"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageView
+            android:id="@+id/google_drive_icon"
+            android:layout_width="46dp"
+            android:layout_height="54dp"
+            android:layout_marginEnd="20dp"
+            android:src="@drawable/ic_google_drive"
+            android:contentDescription="@string/googleDrive"
+            app:layout_constraintBottom_toBottomOf="@+id/btn_drive"
+            app:layout_constraintEnd_toStartOf="@+id/btn_drive"
+            app:layout_constraintTop_toTopOf="@+id/btn_drive" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_begin="377dp" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- Dropbox Button -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/dropbox_container"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:layout_marginTop="30dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/google_drive_container"
+        app:layout_constraintWidth_percent="0.8">
+
+        <!-- Google Drive Button -->
+        <Button
+            android:id="@+id/btn_dropbox"
+            android:layout_width="262dp"
+            android:layout_height="65dp"
+            android:background="@drawable/rounded_button"
+            android:drawableStart="@drawable/ic_dropbox"
+            android:text="@string/dropbox"
+            android:textAllCaps="true"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/guideline4"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageView
+            android:id="@+id/dropbox_icon"
+            android:layout_width="46dp"
+            android:layout_height="54dp"
+            android:layout_marginEnd="20dp"
+            android:contentDescription="@string/googleDrive"
+            android:src="@drawable/ic_dropbox"
+            app:layout_constraintBottom_toBottomOf="@+id/btn_dropbox"
+            app:layout_constraintEnd_toStartOf="@+id/btn_dropbox"
+            app:layout_constraintTop_toTopOf="@+id/btn_dropbox" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_begin="377dp" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
