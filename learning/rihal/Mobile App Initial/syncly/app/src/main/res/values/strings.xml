@@ -36,5 +36,6 @@
     <string name="upload_btn_drive">Upload to Syncly</string>
     <string name="btn_upload">Upload To drive</string>
     <string name="refresh">Refresh</string>
+    <string name="thumbnail">Thumbnail</string>
 
 </resources>

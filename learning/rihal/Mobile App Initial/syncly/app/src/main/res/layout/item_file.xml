@@ -17,6 +17,7 @@
             android:id="@+id/file_thumbnail"
             android:layout_width="60dp"
             android:layout_height="60dp"
+            android:contentDescription="@string/thumbnail"
             android:scaleType="centerCrop"
             android:src="@drawable/ic_file_placeholder_foreground" />
 

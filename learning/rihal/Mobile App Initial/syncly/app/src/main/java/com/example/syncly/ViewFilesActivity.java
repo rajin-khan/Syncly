@@ -9,6 +9,7 @@ import android.widget.Button;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import android.widget.SimpleAdapter;
+import androidx.appcompat.widget.SearchView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.dropbox.core.DbxException;
@@ -32,6 +33,25 @@ public class ViewFilesActivity extends AppCompatActivity {
     private Button btnRefresh;
     private String userId;
     private DriveManager driveManager;
+    private SearchView searchView;
+    private FileListAdapter adapter;
+    private List<Map<String, String>> fileList = new ArrayList<>();
+
+    private void filterFiles(String query) {
+        List<Map<String, String>> filteredList = new ArrayList<>();
+        for (Map<String, String> file : fileList) {
+            if (file.get("name").toLowerCase().contains(query.toLowerCase())) {
+                filteredList.add(file);
+            }
+        }
+        // Update the adapter with the filtered list
+        adapter = new FileListAdapter(ViewFilesActivity.this, filteredList, (url, name) -> {
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            startActivity(intent);
+        });
+        recyclerViewFiles.setAdapter(adapter);
+    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +60,17 @@ public class ViewFilesActivity extends AppCompatActivity {
 
         recyclerViewFiles = findViewById(R.id.recycler_view_files);
         recyclerViewFiles.setLayoutManager(new LinearLayoutManager(this));
+
+        //Searchbar
+        searchView = findViewById(R.id.search_view);
+        //Initialize the FileListAdapter with the empty list
+        adapter = new FileListAdapter(ViewFilesActivity.this, new ArrayList<>(), (url, name) -> {
+            //Your onClick functionality
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            startActivity(intent);
+        });
+        recyclerViewFiles.setAdapter(adapter);
+
         btnRefresh = findViewById(R.id.btn_refresh);
 
         userId = getIntent().getStringExtra("userId");
@@ -54,6 +85,21 @@ public class ViewFilesActivity extends AppCompatActivity {
         });
 
         new CheckDrivesTask().execute();
+        // Implement search functionality
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                // You can handle the query submission here (e.g., filter)
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                // Filter the displayed files based on the search text
+                filterFiles(newText);
+                return true;
+            }
+        });
     }
 
     private class CheckDrivesTask extends AsyncTask<Void, Void, Boolean> {
@@ -217,12 +263,17 @@ public class ViewFilesActivity extends AppCompatActivity {
         }
 
         @Override
-        protected void onPostExecute(List<Map<String, String>> fileList) {
-            if (fileList.isEmpty()) {
+        protected void onPostExecute(List<Map<String, String>> resultList) {
+            if (resultList.isEmpty()) {
                 Toast.makeText(ViewFilesActivity.this, "No files found or error occurred.", Toast.LENGTH_LONG).show();
                 Log.w(TAG, "File list is empty.");
                 return;
             }
+
+            //Assign to the class-level fileList
+            fileList = resultList;
+            //Filter the files based on search query if any
+            filterFiles(searchView.getQuery().toString());
 
             FileListAdapter adapter = new FileListAdapter(ViewFilesActivity.this, fileList, (url, name) -> {
                 try {
