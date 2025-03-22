@@ -167,6 +167,18 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     logger.info(f"Login successful for {form_data.username}")
     return {"access_token": access_token, "token_type": "bearer"}
 
+@app.post("/validate-token", tags=["Auth"])
+async def validate_token(token: str = Query(..., description="JWT token to validate")):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise HTTPException(status_code=401, detail="Invalid token: No username found")
+        return {"username": username}
+    except JWTError as e:
+        logger.error(f"JWT decoding failed: {str(e)}")
+        raise HTTPException(status_code=401, detail="Invalid token")
+
 @app.get("/protected")
 async def protected_route(current_user: dict = Depends(get_current_user)):
     return {"message": f"Hello, {current_user['username']}! You are authenticated."}
@@ -244,7 +256,7 @@ async def add_drive(request: AddDriveRequest, current_user: dict = Depends(get_c
 @app.get("/viewfiles", response_model=List[FileInfo], tags=["Files"])
 async def list_files(
     query: Optional[str] = None,
-    limit: Optional[int] = Query(50, description="Number of files to retrieve (default: 50)"),
+    limit: Optional[int] = Query(50, description="Number of files to retrieve per page (default: 50)"),
     offset: Optional[int] = Query(0, description="Offset for pagination (default: 0)"),
     current_user: dict = Depends(get_current_user)
 ):
@@ -255,7 +267,7 @@ async def list_files(
         all_files = []
         seen_files = set()
         
-        # Collect all files from all drives
+        # Collect files from all drives
         for drive in drive_manager.drives:
             try:
                 files = drive.listFiles(query=query)
@@ -263,10 +275,14 @@ async def list_files(
                 for file in files:
                     file_name = file.get("name", "Unknown")
                     if file_name not in seen_files:
+                        # Convert size to string explicitly
+                        size = file.get("size", "Unknown")
+                        if isinstance(size, (int, float)):
+                            size = str(size)  # Convert numeric size to string
                         all_files.append({
                             "name": file_name,
                             "provider": file.get("provider", "Unknown"),
-                            "size": file.get("size", "Unknown"),
+                            "size": size,
                             "path": file.get("path", "N/A")
                         })
                         seen_files.add(file_name)
