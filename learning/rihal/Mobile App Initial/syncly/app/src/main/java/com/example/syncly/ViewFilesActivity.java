@@ -4,7 +4,8 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
-import android.widget.ListView;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import android.widget.SimpleAdapter;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
@@ -24,7 +25,8 @@ import java.util.concurrent.CountDownLatch;
 
 public class ViewFilesActivity extends AppCompatActivity {
     private static final String TAG = "ViewFilesActivity";
-    private ListView listViewFiles;
+    private RecyclerView recyclerViewFiles;
+
     private Button btnRefresh;
     private String userId;
     private DriveManager driveManager;
@@ -34,7 +36,8 @@ public class ViewFilesActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_view_files);
 
-        listViewFiles = findViewById(R.id.list_view_files);
+        recyclerViewFiles = findViewById(R.id.recycler_view_files);
+        recyclerViewFiles.setLayoutManager(new LinearLayoutManager(this));
         btnRefresh = findViewById(R.id.btn_refresh);
 
         userId = getIntent().getStringExtra("userId");
@@ -215,16 +218,11 @@ public class ViewFilesActivity extends AppCompatActivity {
                 return;
             }
 
-            SimpleAdapter adapter = new SimpleAdapter(
-                    ViewFilesActivity.this,
-                    fileList,
-                    android.R.layout.simple_list_item_2,
-                    new String[]{"name", "provider"},
-                    new int[]{android.R.id.text1, android.R.id.text2}
-            );
-            listViewFiles.setAdapter(adapter);
+            FileListAdapter adapter = new FileListAdapter(ViewFilesActivity.this, fileList);
+            recyclerViewFiles.setAdapter(adapter);
+
             Toast.makeText(ViewFilesActivity.this, "Listed " + fileList.size() + " files.", Toast.LENGTH_SHORT).show();
-            Log.d(TAG, "Displayed " + fileList.size() + " files in ListView");
+            Log.d(TAG, "Displayed " + fileList.size() + " files in RecyclerView");
         }
     }
 

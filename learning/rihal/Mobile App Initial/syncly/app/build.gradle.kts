@@ -79,4 +79,8 @@ dependencies {
     implementation("com.dropbox.core:dropbox-core-sdk:7.0.0") // Check for the latest version
     implementation("org.slf4j:slf4j-api:1.7.36")
     implementation("org.slf4j:slf4j-simple:1.7.36")
+    implementation ("androidx.recyclerview:recyclerview:1.3.1")
+    implementation ("androidx.cardview:cardview:1.0.0")
+    implementation ("com.github.bumptech.glide:glide:4.15.1")
+    annotationProcessor ("com.github.bumptech.glide:compiler:4.15.1")
 }

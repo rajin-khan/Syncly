@@ -9,11 +9,13 @@
         android:id="@+id/btn_refresh"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Refresh" />
+        android:text="@string/refresh" />
 
-    <ListView
-        android:id="@+id/list_view_files"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_view_files"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:layout_marginTop="16dp" />
+
 </LinearLayout>

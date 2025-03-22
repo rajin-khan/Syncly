@@ -4,39 +4,51 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
+
 import java.util.List;
 import java.util.Map;
 
-public class FileListAdapter extends ArrayAdapter<Map<String, String>> {
-    private final Context context;
-    private final List<Map<String, String>> files;
+public class FileListAdapter extends RecyclerView.Adapter<FileListAdapter.ViewHolder> {
 
-    public FileListAdapter(Context context, List<Map<String, String>> files) {
-        super(context, R.layout.list_file_item, files);
+    private final List<Map<String, String>> fileList;
+    private final Context context;
+
+    public FileListAdapter(Context context, List<Map<String, String>> fileList) {
         this.context = context;
-        this.files = files;
+        this.fileList = fileList;
+    }
+
+    public static class ViewHolder extends RecyclerView.ViewHolder {
+        TextView fileName;
+        TextView fileProvider;
+
+        public ViewHolder(View view) {
+            super(view);
+            fileName = view.findViewById(R.id.file_name);
+            fileProvider = view.findViewById(R.id.file_provider);
+        }
+    }
+
+    @NonNull
+    @Override
+    public FileListAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(context).inflate(R.layout.item_file, parent, false);
+        return new ViewHolder(view);
     }
 
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        ViewHolder holder;
-        if (convertView == null) {
-            convertView = LayoutInflater.from(context).inflate(R.layout.list_file_item, parent, false);
-            holder = new ViewHolder();
-            holder.textViewFileName = convertView.findViewById(R.id.text_view_file_name);
-            convertView.setTag(holder);
-        } else {
-            holder = (ViewHolder) convertView.getTag();
-        }
-
-        Map<String, String> file = files.get(position);
-        holder.textViewFileName.setText(file.get("name") + " (" + file.get("size") + ")");
-        return convertView;
+    public void onBindViewHolder(@NonNull FileListAdapter.ViewHolder holder, int position) {
+        Map<String, String> file = fileList.get(position);
+        holder.fileName.setText(file.get("name"));
+        holder.fileProvider.setText(file.get("provider"));
     }
 
-    private static class ViewHolder {
-        TextView textViewFileName;
+    @Override
+    public int getItemCount() {
+        return fileList.size();
     }
 }
