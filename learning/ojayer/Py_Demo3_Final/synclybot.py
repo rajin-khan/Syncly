@@ -110,7 +110,7 @@ async def add_drive(update: Update, context: CallbackContext) -> None:
         await update.message.reply_text("❌ Failed to add drive. Please try again.")
 
 async def list_files(update: Update, context: CallbackContext) -> None:
-    """Lists stored files with an optional limit."""
+    """Lists stored files with names, providers, and links."""
     jwt = context.user_data.get("jwt")
     if not jwt:
         await update.message.reply_text("❌ Please log in first using /login.")
@@ -120,7 +120,7 @@ async def list_files(update: Update, context: CallbackContext) -> None:
     limit = 10
     if context.args:
         try:
-            limit = int(context.args[0])  # Get the limit from the command argument
+            limit = int(context.args[0])
             if limit <= 0:
                 await update.message.reply_text("❌ Please provide a positive number for the limit.")
                 return
@@ -128,27 +128,101 @@ async def list_files(update: Update, context: CallbackContext) -> None:
             await update.message.reply_text("❌ Invalid limit. Please provide a number.")
             return
 
+    # Initialize or reset offset
+    context.user_data["list_offset"] = 0
+    context.user_data["list_limit"] = limit
+
     try:
-        logger.info(f"Fetching files for user: {context.user_data['username']} with limit: {limit}")
+        logger.info(f"Fetching files for user: {context.user_data['username']} with limit: {limit}, offset: 0")
         response = requests.get(
-            f"{API_BASE_URL}/files",
-            params={"limit": limit},
+            f"{API_BASE_URL}/viewfiles",
+            params={"limit": limit, "offset": 0},
             headers={"Authorization": f"Bearer {jwt}"}
         )
-        response.raise_for_status()  # Raise an exception for HTTP errors
+        response.raise_for_status()
         
-        # Log the API response
         files = response.json()
         logger.info(f"API Response: {files}")
         
         if files:
-            file_list = "\n".join([f"📄 {file['name']} ({file['provider']})" for file in files])
-            await update.message.reply_text(f"📂 Your Files (First {limit}):\n{file_list}")
+            file_list = [f"📄 {file['name']} ({file['provider']})\nLink: {file['path']}" for file in files]
+            message = f"📂 Your Files ({len(files)} shown, starting at 1):\n\n" + "\n".join(file_list)
+            if len(files) == limit:
+                message += "\n\nℹ️ Type /more to see the next set or /exit to stop."
+            else:
+                message += "\n\nℹ️ No more files to show."
+                context.user_data.pop("list_offset", None)  # Clear state if no more files
+                context.user_data.pop("list_limit", None)
+            await update.message.reply_text(message)
         else:
             await update.message.reply_text("📂 No files found. Add a bucket first (after logging in).")
+            context.user_data.pop("list_offset", None)
+            context.user_data.pop("list_limit", None)
     except requests.exceptions.RequestException as e:
         logger.error(f"Failed to retrieve files: {e}")
         await update.message.reply_text("❌ Failed to retrieve files.")
+        context.user_data.pop("list_offset", None)
+        context.user_data.pop("list_limit", None)
+
+async def more_files(update: Update, context: CallbackContext) -> None:
+    """Fetches the next set of files."""
+    jwt = context.user_data.get("jwt")
+    if not jwt:
+        await update.message.reply_text("❌ Please log in first using /login.")
+        return
+
+    offset = context.user_data.get("list_offset")
+    limit = context.user_data.get("list_limit")
+    if offset is None or limit is None:
+        await update.message.reply_text("❌ Please use /list first to start viewing files.")
+        return
+
+    # Increment offset
+    offset += limit
+    context.user_data["list_offset"] = offset
+
+    try:
+        logger.info(f"Fetching more files for user: {context.user_data['username']} with limit: {limit}, offset: {offset}")
+        response = requests.get(
+            f"{API_BASE_URL}/viewfiles",
+            params={"limit": limit, "offset": offset},
+            headers={"Authorization": f"Bearer {jwt}"}
+        )
+        response.raise_for_status()
+        
+        files = response.json()
+        logger.info(f"API Response: {files}")
+        
+        if files:
+            file_list = [f"📄 {file['name']} ({file['provider']})\nLink: {file['path']}" for file in files]
+            start_num = offset + 1
+            end_num = offset + len(files)
+            message = f"📂 Your Files ({len(files)} shown, {start_num}-{end_num}):\n\n" + "\n".join(file_list)
+            if len(files) == limit:
+                message += "\n\nℹ️ Type /more to see the next set or /exit to stop."
+            else:
+                message += "\n\nℹ️ No more files to show."
+                context.user_data.pop("list_offset", None)
+                context.user_data.pop("list_limit", None)
+            await update.message.reply_text(message)
+        else:
+            await update.message.reply_text("📂 No more files to show.")
+            context.user_data.pop("list_offset", None)
+            context.user_data.pop("list_limit", None)
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Failed to retrieve more files: {e}")
+        await update.message.reply_text("❌ Failed to retrieve more files.")
+        context.user_data.pop("list_offset", None)
+        context.user_data.pop("list_limit", None)
+
+async def exit_listing(update: Update, context: CallbackContext) -> None:
+    """Exits the file listing mode."""
+    if "list_offset" in context.user_data or "list_limit" in context.user_data:
+        context.user_data.pop("list_offset", None)
+        context.user_data.pop("list_limit", None)
+        await update.message.reply_text("✅ Exited file listing mode.")
+    else:
+        await update.message.reply_text("ℹ️ You’re not in file listing mode.")
 
 async def upload_file(update: Update, context: CallbackContext) -> None:
     """Uploads a file to Syncly."""
@@ -281,6 +355,8 @@ def main():
     app.add_handler(CommandHandler("list", list_files))
     app.add_handler(CommandHandler("download", download_file))
     app.add_handler(CommandHandler("storage", storage_info))
+    app.add_handler(CommandHandler("more", more_files))  # Handler registration
+    app.add_handler(CommandHandler("exit", exit_listing))  # Handler registration
     app.add_handler(MessageHandler(filters.Document.ALL, upload_file))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_jwt))  # Handle JWT input
 
