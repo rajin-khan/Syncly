@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "300851174235",
+    "project_id": "positive-wonder-448815-u0",
+    "storage_bucket": "positive-wonder-448815-u0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:300851174235:android:9922e6e62aa94e4620187e",
+        "android_client_info": {
+          "package_name": "com.example.syncly"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "300851174235-42s4u307pu6v6gu5fm1bsblb4taffdl5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyARg5G4CHAHtDsHCZ9XDqqnpuv2tPUvxlk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "300851174235-42s4u307pu6v6gu5fm1bsblb4taffdl5.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
