@@ -1,0 +1,65 @@
+com.example.syncly.app-ui-unit-release-0 /Users/rajin/.gradle/caches/8.10.2/transforms/0506b11e8c73f73ad8d30313828c73b9/transformed/ui-unit-release/res
+com.example.syncly.app-recyclerview-1.1.0-1 /Users/rajin/.gradle/caches/8.10.2/transforms/05f927e7351b752d19a58d252db44c97/transformed/recyclerview-1.1.0/res
+com.example.syncly.app-animation-release-2 /Users/rajin/.gradle/caches/8.10.2/transforms/090b78a486354654e30dc9cd6834bc50/transformed/animation-release/res
+com.example.syncly.app-lifecycle-process-2.8.7-3 /Users/rajin/.gradle/caches/8.10.2/transforms/0fe644b2b8cbc260e5d5855865fe9cd2/transformed/lifecycle-process-2.8.7/res
+com.example.syncly.app-coordinatorlayout-1.1.0-4 /Users/rajin/.gradle/caches/8.10.2/transforms/124c92e53c9e75e160d20b129fa3e821/transformed/coordinatorlayout-1.1.0/res
+com.example.syncly.app-drawerlayout-1.1.1-5 /Users/rajin/.gradle/caches/8.10.2/transforms/134abbbac01a05c1fefe883e643fdc89/transformed/drawerlayout-1.1.1/res
+com.example.syncly.app-constraintlayout-2.2.1-6 /Users/rajin/.gradle/caches/8.10.2/transforms/2f78fcecd4df6f2415067dd274845223/transformed/constraintlayout-2.2.1/res
+com.example.syncly.app-graphics-path-1.0.1-7 /Users/rajin/.gradle/caches/8.10.2/transforms/3376f0af72c4014f62785d6159b83dd3/transformed/graphics-path-1.0.1/res
+com.example.syncly.app-ui-tooling-release-8 /Users/rajin/.gradle/caches/8.10.2/transforms/3a4b95fdffe7e64d73ae324ae7cdc05c/transformed/ui-tooling-release/res
+com.example.syncly.app-lifecycle-viewmodel-ktx-2.8.7-9 /Users/rajin/.gradle/caches/8.10.2/transforms/3f8eb70b3f1d17af286864cdae86daa4/transformed/lifecycle-viewmodel-ktx-2.8.7/res
+com.example.syncly.app-material-1.12.0-10 /Users/rajin/.gradle/caches/8.10.2/transforms/4abffdc32dcd23e83250666011fd1def/transformed/material-1.12.0/res
+com.example.syncly.app-play-services-basement-18.4.0-11 /Users/rajin/.gradle/caches/8.10.2/transforms/4c053e91dcf7aee87eb0125e31baa15f/transformed/play-services-basement-18.4.0/res
+com.example.syncly.app-ui-tooling-data-release-12 /Users/rajin/.gradle/caches/8.10.2/transforms/4d61ea7b5efd8ee054d0ed750153da6e/transformed/ui-tooling-data-release/res
+com.example.syncly.app-material-ripple-release-13 /Users/rajin/.gradle/caches/8.10.2/transforms/5084daaaf6e31e846084d4a5150df380/transformed/material-ripple-release/res
+com.example.syncly.app-ui-util-release-14 /Users/rajin/.gradle/caches/8.10.2/transforms/56d9215c56f40337d7405faa1ed78e92/transformed/ui-util-release/res
+com.example.syncly.app-annotation-experimental-1.4.1-15 /Users/rajin/.gradle/caches/8.10.2/transforms/57122097befe53dba98d06069dd1f891/transformed/annotation-experimental-1.4.1/res
+com.example.syncly.app-lifecycle-livedata-core-2.8.7-16 /Users/rajin/.gradle/caches/8.10.2/transforms/59e59145fd398ca2295f21c630c2e366/transformed/lifecycle-livedata-core-2.8.7/res
+com.example.syncly.app-lifecycle-runtime-release-17 /Users/rajin/.gradle/caches/8.10.2/transforms/5d184bba79ea6944b08c4acb81ab2600/transformed/lifecycle-runtime-release/res
+com.example.syncly.app-foundation-layout-release-18 /Users/rajin/.gradle/caches/8.10.2/transforms/5db11e9e3e97a18ebcc2a738263a462a/transformed/foundation-layout-release/res
+com.example.syncly.app-activity-1.10.1-19 /Users/rajin/.gradle/caches/8.10.2/transforms/5ee8866c1231503560509e50ef3de094/transformed/activity-1.10.1/res
+com.example.syncly.app-profileinstaller-1.4.0-20 /Users/rajin/.gradle/caches/8.10.2/transforms/617c20a10bc54a1de82d61c5a87f402e/transformed/profileinstaller-1.4.0/res
+com.example.syncly.app-activity-ktx-1.10.1-21 /Users/rajin/.gradle/caches/8.10.2/transforms/62b828533fb49c2e1e09856950c70dd1/transformed/activity-ktx-1.10.1/res
+com.example.syncly.app-ui-graphics-release-22 /Users/rajin/.gradle/caches/8.10.2/transforms/65c5eec1f43c9c663140b565017c35e2/transformed/ui-graphics-release/res
+com.example.syncly.app-core-ktx-1.13.1-23 /Users/rajin/.gradle/caches/8.10.2/transforms/698661fe0854dc0e97d1bf9869251863/transformed/core-ktx-1.13.1/res
+com.example.syncly.app-transition-1.5.0-24 /Users/rajin/.gradle/caches/8.10.2/transforms/6b71caaf376593ba9b7a740c0b4cfd5e/transformed/transition-1.5.0/res
+com.example.syncly.app-lifecycle-runtime-compose-release-25 /Users/rajin/.gradle/caches/8.10.2/transforms/71c0d078e6e74e77c8179c2d8a093503/transformed/lifecycle-runtime-compose-release/res
+com.example.syncly.app-savedstate-ktx-1.2.1-26 /Users/rajin/.gradle/caches/8.10.2/transforms/8bd5893004b33c729f846a38256dbcaf/transformed/savedstate-ktx-1.2.1/res
+com.example.syncly.app-lifecycle-viewmodel-release-27 /Users/rajin/.gradle/caches/8.10.2/transforms/8d04e11beefbd76fe31c5dfa45a0deaa/transformed/lifecycle-viewmodel-release/res
+com.example.syncly.app-ui-geometry-release-28 /Users/rajin/.gradle/caches/8.10.2/transforms/8e457735077d64a01b560533d083a6cf/transformed/ui-geometry-release/res
+com.example.syncly.app-lifecycle-runtime-ktx-release-29 /Users/rajin/.gradle/caches/8.10.2/transforms/8e9ec365458c839edcb0dc6de2b031ca/transformed/lifecycle-runtime-ktx-release/res
+com.example.syncly.app-fragment-1.5.7-30 /Users/rajin/.gradle/caches/8.10.2/transforms/968f53c355f0f7781b6ebde236e74b76/transformed/fragment-1.5.7/res
+com.example.syncly.app-cardview-1.0.0-31 /Users/rajin/.gradle/caches/8.10.2/transforms/9c70cb4ac9e455a255c08e7105dcf0d8/transformed/cardview-1.0.0/res
+com.example.syncly.app-emoji2-1.3.0-32 /Users/rajin/.gradle/caches/8.10.2/transforms/a69681ceb2b0128dc6522d9e997406b6/transformed/emoji2-1.3.0/res
+com.example.syncly.app-material-icons-core-release-33 /Users/rajin/.gradle/caches/8.10.2/transforms/a7bc5c7dad39abf4bc9191afc1ddd17c/transformed/material-icons-core-release/res
+com.example.syncly.app-play-services-base-18.5.0-34 /Users/rajin/.gradle/caches/8.10.2/transforms/ab01218a122d57fc37fd53534259029a/transformed/play-services-base-18.5.0/res
+com.example.syncly.app-ui-test-manifest-1.7.8-35 /Users/rajin/.gradle/caches/8.10.2/transforms/ab6c08cf3d8b6d48cb7c1c1fc9ad6e37/transformed/ui-test-manifest-1.7.8/res
+com.example.syncly.app-appcompat-1.7.0-36 /Users/rajin/.gradle/caches/8.10.2/transforms/ae495700c00bf8e834c02616c7f10ec6/transformed/appcompat-1.7.0/res
+com.example.syncly.app-startup-runtime-1.1.1-37 /Users/rajin/.gradle/caches/8.10.2/transforms/b0090264bbc3f4a14769d8a7987cc647/transformed/startup-runtime-1.1.1/res
+com.example.syncly.app-lifecycle-viewmodel-savedstate-2.8.7-38 /Users/rajin/.gradle/caches/8.10.2/transforms/b3d6eeebfd69b3c25e9cbc5506accc63/transformed/lifecycle-viewmodel-savedstate-2.8.7/res
+com.example.syncly.app-ui-text-release-39 /Users/rajin/.gradle/caches/8.10.2/transforms/b75723852b8b90c501b2ba9483f3ec33/transformed/ui-text-release/res
+com.example.syncly.app-emoji2-views-helper-1.3.0-40 /Users/rajin/.gradle/caches/8.10.2/transforms/b8d39740258eca3d52d9372e0210df51/transformed/emoji2-views-helper-1.3.0/res
+com.example.syncly.app-animation-core-release-41 /Users/rajin/.gradle/caches/8.10.2/transforms/bb210d91a1a0be326bbcd8df92df52ab/transformed/animation-core-release/res
+com.example.syncly.app-viewpager2-1.0.0-42 /Users/rajin/.gradle/caches/8.10.2/transforms/c04e91d3b1840cbcd46db1fa2c2838b0/transformed/viewpager2-1.0.0/res
+com.example.syncly.app-runtime-saveable-release-43 /Users/rajin/.gradle/caches/8.10.2/transforms/c3b942f711b77ba23bed75fcdda5d612/transformed/runtime-saveable-release/res
+com.example.syncly.app-material3-release-44 /Users/rajin/.gradle/caches/8.10.2/transforms/c3f1f9ccf68c629a365b2d386ef277d8/transformed/material3-release/res
+com.example.syncly.app-savedstate-1.2.1-45 /Users/rajin/.gradle/caches/8.10.2/transforms/c433a929e18b46fe9f6d6060a85e1f07/transformed/savedstate-1.2.1/res
+com.example.syncly.app-customview-poolingcontainer-1.0.0-46 /Users/rajin/.gradle/caches/8.10.2/transforms/c75ce69a0787ecd561e3e1a224d549a2/transformed/customview-poolingcontainer-1.0.0/res
+com.example.syncly.app-core-runtime-2.2.0-47 /Users/rajin/.gradle/caches/8.10.2/transforms/ca14d1b4715f141c63f9ecec472d2d49/transformed/core-runtime-2.2.0/res
+com.example.syncly.app-appcompat-resources-1.7.0-48 /Users/rajin/.gradle/caches/8.10.2/transforms/d2007f352ac2d3c3b66d808c4fd0e253/transformed/appcompat-resources-1.7.0/res
+com.example.syncly.app-material-release-49 /Users/rajin/.gradle/caches/8.10.2/transforms/dc5e41df4a945bc599f9dc0c3d558d45/transformed/material-release/res
+com.example.syncly.app-core-1.13.1-50 /Users/rajin/.gradle/caches/8.10.2/transforms/e27b782f1131ab9ee546f043aded0aa9/transformed/core-1.13.1/res
+com.example.syncly.app-ui-release-51 /Users/rajin/.gradle/caches/8.10.2/transforms/e6bd2c119c638b5cdcf646c6d53d2ff9/transformed/ui-release/res
+com.example.syncly.app-activity-compose-1.10.1-52 /Users/rajin/.gradle/caches/8.10.2/transforms/e9c56072aa22e70c288d2529d7027d74/transformed/activity-compose-1.10.1/res
+com.example.syncly.app-core-viewtree-1.0.0-53 /Users/rajin/.gradle/caches/8.10.2/transforms/ece0852e894741178fae99b15fecf032/transformed/core-viewtree-1.0.0/res
+com.example.syncly.app-foundation-release-54 /Users/rajin/.gradle/caches/8.10.2/transforms/ee803dcec2809200580ac88ce9235e48/transformed/foundation-release/res
+com.example.syncly.app-play-services-auth-21.3.0-55 /Users/rajin/.gradle/caches/8.10.2/transforms/f2ef1aee888b8152ff557d8ef0bb4cfb/transformed/play-services-auth-21.3.0/res
+com.example.syncly.app-runtime-release-56 /Users/rajin/.gradle/caches/8.10.2/transforms/f83725393ff5e43aed684d1381828955/transformed/runtime-release/res
+com.example.syncly.app-ui-tooling-preview-release-57 /Users/rajin/.gradle/caches/8.10.2/transforms/ff544c1e262e81cd8ca5178ecc83a33e/transformed/ui-tooling-preview-release/res
+com.example.syncly.app-pngs-58 /Users/rajin/Developer/UNI/SEM10-SOFTENG-PROJECT/learning/rihal/Mobile App Initial/syncly/app/build/generated/res/pngs/debug
+com.example.syncly.app-resValues-59 /Users/rajin/Developer/UNI/SEM10-SOFTENG-PROJECT/learning/rihal/Mobile App Initial/syncly/app/build/generated/res/resValues/debug
+com.example.syncly.app-packageDebugResources-60 /Users/rajin/Developer/UNI/SEM10-SOFTENG-PROJECT/learning/rihal/Mobile App Initial/syncly/app/build/intermediates/incremental/debug/packageDebugResources/merged.dir
+com.example.syncly.app-packageDebugResources-61 /Users/rajin/Developer/UNI/SEM10-SOFTENG-PROJECT/learning/rihal/Mobile App Initial/syncly/app/build/intermediates/incremental/debug/packageDebugResources/stripped.dir
+com.example.syncly.app-debug-62 /Users/rajin/Developer/UNI/SEM10-SOFTENG-PROJECT/learning/rihal/Mobile App Initial/syncly/app/build/intermediates/merged_res/debug/mergeDebugResources
+com.example.syncly.app-debug-63 /Users/rajin/Developer/UNI/SEM10-SOFTENG-PROJECT/learning/rihal/Mobile App Initial/syncly/app/src/debug/res
+com.example.syncly.app-main-64 /Users/rajin/Developer/UNI/SEM10-SOFTENG-PROJECT/learning/rihal/Mobile App Initial/syncly/app/src/main/res

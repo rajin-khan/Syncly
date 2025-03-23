@@ -1,0 +1,442 @@
+[
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xxhdpi_ic_google_drive_round.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xxhdpi/ic_google_drive_round.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xxhdpi_ic_google_drive.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xxhdpi/ic_google_drive.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xhdpi_ic_launcher.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xhdpi/ic_launcher.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-anydpi-v26_ic_visibility_off.xml.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-anydpi-v26/ic_visibility_off.xml"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-anydpi-v26_ic_visibility.xml.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-anydpi-v26/ic_visibility.xml"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xxxhdpi_ic_launcher_round.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xxxhdpi/ic_launcher_round.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-hdpi_ic_dropbox_foreground.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-hdpi/ic_dropbox_foreground.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/drawable_logo.png.flat",
+        "source": "com.example.syncly.app-main-64:/drawable/logo.png"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xhdpi_ic_google_drive_foreground.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xhdpi/ic_google_drive_foreground.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/drawable_ic_visibility.png.flat",
+        "source": "com.example.syncly.app-main-64:/drawable/ic_visibility.png"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-anydpi-v26/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xxxhdpi_ic_visibility_off_foreground.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xxxhdpi/ic_visibility_off_foreground.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-mdpi_ic_visibility_foreground.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-mdpi/ic_visibility_foreground.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-hdpi_ic_google_drive_round.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-hdpi/ic_google_drive_round.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/layout_activity_login.xml.flat",
+        "source": "com.example.syncly.app-main-64:/layout/activity_login.xml"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/drawable_ic_dropbox.png.flat",
+        "source": "com.example.syncly.app-main-64:/drawable/ic_dropbox.png"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xhdpi_ic_dropbox_round.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xhdpi/ic_dropbox_round.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/layout_activity_add_bucket.xml.flat",
+        "source": "com.example.syncly.app-main-64:/layout/activity_add_bucket.xml"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xxhdpi_ic_dropbox_foreground.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xxhdpi/ic_dropbox_foreground.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-hdpi_ic_launcher.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-hdpi/ic_launcher.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xhdpi_ic_visibility_foreground.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xhdpi/ic_visibility_foreground.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xxxhdpi_ic_visibility_off_round.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xxxhdpi/ic_visibility_off_round.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xhdpi_ic_visibility.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xhdpi/ic_visibility.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/xml_data_extraction_rules.xml.flat",
+        "source": "com.example.syncly.app-main-64:/xml/data_extraction_rules.xml"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-hdpi_ic_dropbox.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-hdpi/ic_dropbox.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xxhdpi_ic_visibility_off.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xxhdpi/ic_visibility_off.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-anydpi-v26_ic_visibility_round.xml.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-anydpi-v26/ic_visibility_round.xml"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-hdpi_ic_visibility.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-hdpi/ic_visibility.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xxhdpi_ic_visibility_round.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xxhdpi/ic_visibility_round.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/drawable_ic_visibility_foreground.xml.flat",
+        "source": "com.example.syncly.app-main-64:/drawable/ic_visibility_foreground.xml"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-mdpi_ic_launcher.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-mdpi/ic_launcher.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xhdpi_ic_launcher_round.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xhdpi/ic_launcher_round.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xxhdpi_ic_visibility_foreground.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xxhdpi/ic_visibility_foreground.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-mdpi_ic_visibility_off_round.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-mdpi/ic_visibility_off_round.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xxhdpi_ic_visibility_off_round.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xxhdpi/ic_visibility_off_round.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/drawable_ic_visibility_off_background.xml.flat",
+        "source": "com.example.syncly.app-main-64:/drawable/ic_visibility_off_background.xml"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-hdpi_ic_google_drive.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-hdpi/ic_google_drive.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-mdpi_ic_google_drive_foreground.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-mdpi/ic_google_drive_foreground.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-hdpi_ic_visibility_round.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-hdpi/ic_visibility_round.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-anydpi-v26_ic_visibility_off_round.xml.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-anydpi-v26/ic_visibility_off_round.xml"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-mdpi_ic_visibility_off.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-mdpi/ic_visibility_off.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/layout_activity_home.xml.flat",
+        "source": "com.example.syncly.app-main-64:/layout/activity_home.xml"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xhdpi_ic_visibility_round.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xhdpi/ic_visibility_round.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/drawable_ic_launcher_background.xml.flat",
+        "source": "com.example.syncly.app-main-64:/drawable/ic_launcher_background.xml"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xxxhdpi_ic_visibility_round.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xxxhdpi/ic_visibility_round.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xxxhdpi_ic_visibility_off.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xxxhdpi/ic_visibility_off.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-mdpi_ic_dropbox_round.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-mdpi/ic_dropbox_round.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-anydpi-v26_ic_google_drive_round.xml.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-anydpi-v26/ic_google_drive_round.xml"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xhdpi_ic_visibility_off_round.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xhdpi/ic_visibility_off_round.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-hdpi_ic_launcher_foreground.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-hdpi/ic_launcher_foreground.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-mdpi_ic_launcher_foreground.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-mdpi/ic_launcher_foreground.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xhdpi_ic_google_drive_round.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xhdpi/ic_google_drive_round.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/drawable_ic_visibility_off_foreground.xml.flat",
+        "source": "com.example.syncly.app-main-64:/drawable/ic_visibility_off_foreground.xml"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-mdpi_ic_visibility_off_foreground.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-mdpi/ic_visibility_off_foreground.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/drawable_ic_visibility_off.png.flat",
+        "source": "com.example.syncly.app-main-64:/drawable/ic_visibility_off.png"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-mdpi_ic_google_drive_round.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-mdpi/ic_google_drive_round.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xxhdpi_ic_visibility_off_foreground.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xxhdpi/ic_visibility_off_foreground.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/raw_credentials.json.flat",
+        "source": "com.example.syncly.app-main-64:/raw/credentials.json"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xhdpi_ic_google_drive.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xhdpi/ic_google_drive.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xxxhdpi_ic_dropbox_round.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xxxhdpi/ic_dropbox_round.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-mdpi_ic_dropbox.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-mdpi/ic_dropbox.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-mdpi_ic_launcher_round.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-mdpi/ic_launcher_round.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xxhdpi_ic_launcher.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xxhdpi/ic_launcher.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/drawable_ic_launcher.png.flat",
+        "source": "com.example.syncly.app-main-64:/drawable/ic_launcher.png"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/layout_activity_upload_files.xml.flat",
+        "source": "com.example.syncly.app-main-64:/layout/activity_upload_files.xml"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-hdpi_ic_google_drive_foreground.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-hdpi/ic_google_drive_foreground.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xxxhdpi_ic_launcher_foreground.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xxxhdpi/ic_launcher_foreground.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/layout_activity_google_drive_account.xml.flat",
+        "source": "com.example.syncly.app-main-64:/layout/activity_google_drive_account.xml"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/layout_activity_register.xml.flat",
+        "source": "com.example.syncly.app-main-64:/layout/activity_register.xml"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-anydpi-v26/ic_launcher.xml"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-mdpi_ic_google_drive.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-mdpi/ic_google_drive.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-hdpi_ic_visibility_off.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-hdpi/ic_visibility_off.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xhdpi_ic_visibility_off_foreground.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xhdpi/ic_visibility_off_foreground.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-anydpi-v26_ic_dropbox.xml.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-anydpi-v26/ic_dropbox.xml"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xxxhdpi_ic_visibility_foreground.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xxxhdpi/ic_visibility_foreground.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xxxhdpi_ic_dropbox_foreground.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xxxhdpi/ic_dropbox_foreground.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xxhdpi_ic_google_drive_foreground.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xxhdpi/ic_google_drive_foreground.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/xml_backup_rules.xml.flat",
+        "source": "com.example.syncly.app-main-64:/xml/backup_rules.xml"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xxxhdpi_ic_google_drive_foreground.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xxxhdpi/ic_google_drive_foreground.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/drawable_ic_google_drive.png.flat",
+        "source": "com.example.syncly.app-main-64:/drawable/ic_google_drive.png"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xhdpi_ic_dropbox_foreground.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xhdpi/ic_dropbox_foreground.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xhdpi_ic_launcher_foreground.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xhdpi/ic_launcher_foreground.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/drawable_ic_google_drive_background.xml.flat",
+        "source": "com.example.syncly.app-main-64:/drawable/ic_google_drive_background.xml"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-mdpi_ic_visibility_round.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-mdpi/ic_visibility_round.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-hdpi_ic_dropbox_round.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-hdpi/ic_dropbox_round.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xxhdpi_ic_dropbox.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xxhdpi/ic_dropbox.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-mdpi_ic_dropbox_foreground.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-mdpi/ic_dropbox_foreground.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xxhdpi_ic_dropbox_round.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xxhdpi/ic_dropbox_round.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/drawable_ic_dropbox_background.xml.flat",
+        "source": "com.example.syncly.app-main-64:/drawable/ic_dropbox_background.xml"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xxxhdpi_ic_google_drive.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xxxhdpi/ic_google_drive.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xxxhdpi_ic_dropbox.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xxxhdpi/ic_dropbox.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-hdpi_ic_launcher_round.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-hdpi/ic_launcher_round.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/drawable_rounded_button.xml.flat",
+        "source": "com.example.syncly.app-main-64:/drawable/rounded_button.xml"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xhdpi_ic_visibility_off.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xhdpi/ic_visibility_off.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xxxhdpi_ic_visibility.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xxxhdpi/ic_visibility.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-hdpi_ic_visibility_off_round.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-hdpi/ic_visibility_off_round.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-anydpi-v26_ic_google_drive.xml.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-anydpi-v26/ic_google_drive.xml"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xxhdpi_ic_visibility.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xxhdpi/ic_visibility.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-anydpi-v26_ic_dropbox_round.xml.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-anydpi-v26/ic_dropbox_round.xml"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/layout_activity_main.xml.flat",
+        "source": "com.example.syncly.app-main-64:/layout/activity_main.xml"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xxhdpi_ic_launcher_round.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xxhdpi/ic_launcher_round.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-hdpi_ic_visibility_foreground.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-hdpi/ic_visibility_foreground.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-mdpi_ic_visibility.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-mdpi/ic_visibility.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-hdpi_ic_visibility_off_foreground.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-hdpi/ic_visibility_off_foreground.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xxxhdpi_ic_launcher.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xxxhdpi/ic_launcher.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xxhdpi_ic_launcher_foreground.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xxhdpi/ic_launcher_foreground.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/drawable_ic_visibility_background.xml.flat",
+        "source": "com.example.syncly.app-main-64:/drawable/ic_visibility_background.xml"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xxxhdpi_ic_google_drive_round.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xxxhdpi/ic_google_drive_round.webp"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/layout_activity_dropbox_account.xml.flat",
+        "source": "com.example.syncly.app-main-64:/layout/activity_dropbox_account.xml"
+    },
+    {
+        "merged": "com.example.syncly.app-debug-62:/mipmap-xhdpi_ic_dropbox.webp.flat",
+        "source": "com.example.syncly.app-main-64:/mipmap-xhdpi/ic_dropbox.webp"
+    }
+]
