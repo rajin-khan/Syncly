@@ -17,7 +17,6 @@ import com.google.api.services.drive.Drive;
 
 import org.bson.Document;
 
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -35,8 +34,7 @@ public class UploadFilesActivity extends AppCompatActivity {
     private String userId;
     private DriveManager driveManager;
     private Uri selectedFileUri;
-    private Map<String, List<Service>> availableDrives = new HashMap<>();
-    private Map<String, Long> totalFreeSpace = new HashMap<>(); // Total space per drive type
+    private Map<String, Long> totalFreeSpace = new HashMap<>(); // Still needed for determineTargetDrive()
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,8 +51,6 @@ public class UploadFilesActivity extends AppCompatActivity {
         String tokenDir = getFilesDir().getAbsolutePath();
         driveManager = DriveManager.getInstance(userId, tokenDir, this);
 
-        new InitializeDrivesTask().execute();
-
         btnSelectFile.setOnClickListener(v -> {
             Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
             intent.setType("*/*");
@@ -67,9 +63,7 @@ public class UploadFilesActivity extends AppCompatActivity {
                 Toast.makeText(this, "Please select a file first!", Toast.LENGTH_SHORT).show();
                 return;
             }
-            String targetDrive = determineTargetDrive();
-            Toast.makeText(this, "Uploading to " + targetDrive + "...", Toast.LENGTH_SHORT).show();
-            new UploadFileTask(targetDrive).execute(selectedFileUri);
+            new CalculateFreeSpaceTask().execute(); // New task to calculate free space before upload
         });
     }
 
@@ -80,59 +74,34 @@ public class UploadFilesActivity extends AppCompatActivity {
         return googleDriveSpace >= dropboxSpace ? "GoogleDrive" : "Dropbox";
     }
 
-    private class InitializeDrivesTask extends AsyncTask<Void, Void, Boolean> {
-        private Map<String, Map<Integer, Long>> bucketSpaceInfo = new HashMap<>();
-
+    // New task to calculate free space before determining target drive
+    private class CalculateFreeSpaceTask extends AsyncTask<Void, Void, Void> {
         @Override
-        protected Boolean doInBackground(Void... voids) {
+        protected Void doInBackground(Void... voids) {
             try {
                 List<DriveManager.Bucket> buckets = driveManager.getSortedBuckets();
-                availableDrives.put("GoogleDrive", new ArrayList<>());
-                availableDrives.put("Dropbox", new ArrayList<>());
-                bucketSpaceInfo.put("GoogleDrive", new HashMap<>());
-                bucketSpaceInfo.put("Dropbox", new HashMap<>());
                 totalFreeSpace.put("GoogleDrive", 0L);
                 totalFreeSpace.put("Dropbox", 0L);
 
                 for (DriveManager.Bucket bucket : buckets) {
-                    Service service = bucket.getDrive();
                     long freeSpace = bucket.getFreeSpace();
-                    if (freeSpace > 0) {
-                        if (service instanceof GoogleDrive) {
-                            availableDrives.get("GoogleDrive").add(service);
-                            bucketSpaceInfo.get("GoogleDrive").put(bucket.getIndex(), freeSpace);
-                            totalFreeSpace.put("GoogleDrive", totalFreeSpace.get("GoogleDrive") + freeSpace);
-                        } else if (service instanceof DropboxService) {
-                            availableDrives.get("Dropbox").add(service);
-                            bucketSpaceInfo.get("Dropbox").put(bucket.getIndex(), freeSpace);
-                            totalFreeSpace.put("Dropbox", totalFreeSpace.get("Dropbox") + freeSpace);
-                        }
+                    if (bucket.getDrive() instanceof GoogleDrive) {
+                        totalFreeSpace.put("GoogleDrive", totalFreeSpace.get("GoogleDrive") + freeSpace);
+                    } else if (bucket.getDrive() instanceof DropboxService) {
+                        totalFreeSpace.put("Dropbox", totalFreeSpace.get("Dropbox") + freeSpace);
                     }
                 }
-                return !availableDrives.get("GoogleDrive").isEmpty() || !availableDrives.get("Dropbox").isEmpty();
             } catch (Exception e) {
-                Log.e(TAG, "Failed to initialize drives: " + e.getMessage(), e);
-                return false;
+                Log.e(TAG, "Failed to calculate free space: " + e.getMessage(), e);
             }
+            return null;
         }
 
         @Override
-        protected void onPostExecute(Boolean success) {
-            if (!success) {
-                Toast.makeText(UploadFilesActivity.this, "No drives available. Add a bucket first.", Toast.LENGTH_LONG).show();
-            } else {
-                Log.d(TAG, "Initialized drives: " + availableDrives);
-                StringBuilder spaceInfo = new StringBuilder("Available Bucket Space:\n");
-                for (String driveType : bucketSpaceInfo.keySet()) {
-                    Map<Integer, Long> buckets = bucketSpaceInfo.get(driveType);
-                    for (Map.Entry<Integer, Long> entry : buckets.entrySet()) {
-                        long freeSpaceMB = entry.getValue() / (1024 * 1024);
-                        spaceInfo.append(String.format("%s bucket %d: %d MB free\n", driveType, entry.getKey(), freeSpaceMB));
-                        Log.d(TAG, String.format("%s bucket %d has %d MB free space", driveType, entry.getKey(), freeSpaceMB));
-                    }
-                }
-                tvSelectedFile.setText(spaceInfo.toString());
-            }
+        protected void onPostExecute(Void aVoid) {
+            String targetDrive = determineTargetDrive();
+            Toast.makeText(UploadFilesActivity.this, "Uploading to " + targetDrive + "...", Toast.LENGTH_SHORT).show();
+            new UploadFileTask(targetDrive).execute(selectedFileUri);
         }
     }
 
@@ -147,12 +116,6 @@ public class UploadFilesActivity extends AppCompatActivity {
         protected Boolean doInBackground(Uri... uris) {
             Uri uri = uris[0];
             try {
-                List<Service> services = availableDrives.get(driveType);
-                if (services == null || services.isEmpty()) {
-                    Log.e(TAG, driveType + " services not available");
-                    return false;
-                }
-
                 File file = convertUriToFile(uri);
                 long fileSize = file.length();
                 String fileName = getFileName(uri);
@@ -318,8 +281,7 @@ public class UploadFilesActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_FILE_PICK && resultCode == RESULT_OK && data != null) {
             selectedFileUri = data.getData();
-            String currentText = tvSelectedFile.getText().toString();
-            tvSelectedFile.setText(currentText + "\nSelected: " + selectedFileUri.getLastPathSegment());
+            tvSelectedFile.setText("Selected: " + selectedFileUri.getLastPathSegment());
             Log.d(TAG, "File selected: " + selectedFileUri);
         }
     }

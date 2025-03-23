@@ -5,8 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white"
-    android:gravity="center"
-    tools:context=".UploadFilesActivity">
+    tools:context=".CheckStorageActivity">
 
     <!-- Logo Image -->
     <ImageView
@@ -20,60 +19,54 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- Choose File Text -->
+    <!-- Storage Title -->
     <TextView
-        android:id="@+id/choose_file_text"
+        android:id="@+id/storage_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/select_file"
+        android:text="@string/storageOverview"
         android:textColor="@color/black"
-        android:textSize="18sp"
+        android:textSize="20sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/logo" />
 
-    <!-- File Selection Button -->
-    <Button
-        android:id="@+id/btn_select_file"
-        android:layout_width="262dp"
-        android:layout_height="65dp"
-        android:layout_marginTop="140dp"
-        android:background="@drawable/rounded_button"
-        android:text="@string/choose_file"
-        android:textAllCaps="true"
-        android:textColor="@color/white"
-        android:textSize="18sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.496"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/choose_file_text" />
-
-    <!-- Selected File Name -->
     <TextView
-        android:id="@+id/tv_selected_file"
+        android:id="@+id/tv_storage_summary"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/no_file_selected"
+        android:layout_marginTop="10dp"
+        android:text="0 MB / 0 MB used"
         android:textColor="@color/black"
         android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btn_select_file" />
+        app:layout_constraintTop_toBottomOf="@+id/storage_title" />
 
-    <!-- Upload Button -->
-    <Button
-        android:id="@+id/btn_upload"
-        android:layout_width="262dp"
-        android:layout_height="65dp"
-        android:layout_marginTop="40dp"
-        android:background="@drawable/rounded_button"
-        android:text="@string/upload"
-        android:textAllCaps="true"
-        android:textColor="@color/white"
-        android:textSize="18sp"
+    <!-- Combined Storage ProgressBar -->
+    <ProgressBar
+        android:id="@+id/pb_combined_storage"
+        style="@android:style/Widget.ProgressBar.Horizontal"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:max="100"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv_selected_file" />
+        app:layout_constraintTop_toBottomOf="@+id/tv_storage_summary" />
+
+    <!-- Storage Breakdown TextView -->
+    <TextView
+        android:id="@+id/tv_storage_breakdown"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="@string/loadStorage"
+        android:textColor="@color/black"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/pb_combined_storage" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

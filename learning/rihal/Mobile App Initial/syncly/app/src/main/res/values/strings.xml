@@ -37,5 +37,8 @@
     <string name="btn_upload">Upload To drive</string>
     <string name="refresh">Refresh</string>
     <string name="thumbnail">Thumbnail</string>
+    <string name="checkStorage">Check Storage</string>
+    <string name="storageOverview">Storage Overview</string>
+    <string name="loadStorage">Loading storage info…</string>
 
 </resources>

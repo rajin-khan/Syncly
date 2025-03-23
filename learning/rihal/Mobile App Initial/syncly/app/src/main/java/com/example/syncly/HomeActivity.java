@@ -16,7 +16,7 @@ import java.util.List;
 
 public class HomeActivity extends AppCompatActivity {
 
-    private Button viewFilesButton, addBucketButton, uploadFilesButton, exitButton;
+    private Button viewFilesButton, checkStorageButton, addBucketButton, uploadFilesButton, exitButton;
     private String userId; // ObjectId as string
     private String username; // For logging and intent extras
     private static final String TAG = "HomeActivity";
@@ -35,12 +35,26 @@ public class HomeActivity extends AppCompatActivity {
         driveManager = DriveManager.getInstance(userId, tokenDir, this); // Initialize here
 
         viewFilesButton = findViewById(R.id.btn_view_files);
+        checkStorageButton = findViewById(R.id.btn_check_storage);
         addBucketButton = findViewById(R.id.btn_add_bucket);
         uploadFilesButton = findViewById(R.id.btn_upload_files);
         exitButton = findViewById(R.id.btn_exit);
 
         viewFilesButton.setOnClickListener(v -> {
             new FetchAuthenticatedBucketsTask("view").execute();
+        });
+
+        checkStorageButton.setOnClickListener(v -> {
+            Log.d(TAG, "Check Storage button clicked"); // Debug log
+            Intent intent = new Intent(HomeActivity.this, CheckStorageActivity.class);
+            intent.putExtra("userId", userId); // Pass userId to CheckStorageActivity
+            try {
+                startActivity(intent);
+                Log.d(TAG, "Intent to CheckStorageActivity started successfully");
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to start CheckStorageActivity: " + e.getMessage(), e);
+                Toast.makeText(HomeActivity.this, "Error opening storage check", Toast.LENGTH_SHORT).show();
+            }
         });
 
         addBucketButton.setOnClickListener(v -> {

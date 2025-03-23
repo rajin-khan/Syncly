@@ -3,7 +3,7 @@ package com.example.syncly;
 import android.content.Context;
 import android.util.Log;
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.result.UpdateResult; // Add this import
+import com.mongodb.client.result.UpdateResult;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 
@@ -20,23 +20,23 @@ import com.google.api.services.drive.Drive;
 public class DriveManager {
     private static final String TAG = "DriveManager";
     private static DriveManager instance;
-    private final ObjectId userId; // Changed to ObjectId
+    private final ObjectId userId;
     private final String tokenDir;
-    private final Context context; // Stored for use in Bucket
+    private final Context context;
     private final List<Bucket> buckets = Collections.synchronizedList(new ArrayList<>());
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final Database db = Database.getInstance();
     private CountDownLatch initialLoadLatch = new CountDownLatch(1);
 
     private DriveManager(String userId, String tokenDir, Context context) {
-        this.userId = new ObjectId(userId); // Convert String to ObjectId
+        this.userId = new ObjectId(userId);
         this.tokenDir = tokenDir;
         this.context = context;
         loadUserDrives();
     }
 
     public static synchronized DriveManager getInstance(String userId, String tokenDir, Context context) {
-        if (instance == null || !instance.userId.toString().equals(userId)) { // Compare as String
+        if (instance == null || !instance.userId.toString().equals(userId)) {
             instance = new DriveManager(userId, tokenDir, context);
         }
         return instance;
@@ -57,7 +57,7 @@ public class DriveManager {
                         String accountEmail = doc.getString("account_email");
                         GoogleDrive googleDrive = new GoogleDrive(context);
                         drive = googleDrive;
-                        googleDrive.setAccountEmail(accountEmail); // Add this setter in GoogleDrive class
+                        googleDrive.setAccountEmail(accountEmail);
                         Log.d(TAG, "Loaded GoogleDrive with email: " + accountEmail + " (Bucket " + bucketNumber + ") - authentication deferred");
                     } else if ("Dropbox".equals(type)) {
                         String accessToken = doc.getString("access_token");
@@ -78,7 +78,7 @@ public class DriveManager {
                         });
                     }
                     if (drive != null) {
-                        buckets.add(new Bucket(drive, bucketNumber, context)); // Pass context to Bucket
+                        buckets.add(new Bucket(drive, bucketNumber, context));
                     }
                 }
                 Log.d(TAG, "Finished loading " + buckets.size() + " drives.");
@@ -97,7 +97,7 @@ public class DriveManager {
                 synchronized (buckets) {
                     buckets.add(bucket);
                 }
-                Document driveDoc = new Document("user_id", userId.toString()) // Store as string in drives collection
+                Document driveDoc = new Document("user_id", userId.toString())
                         .append("type", driveType)
                         .append("bucket_number", bucketNumber);
                 if (drive instanceof GoogleDrive) {
@@ -127,7 +127,7 @@ public class DriveManager {
                 }
             }
             UpdateResult result = db.getUsersCollection().updateOne(
-                    new Document("_id", userId), // Use ObjectId directly
+                    new Document("_id", userId),
                     new Document("$set", new Document("drives", bucketNumbers)));
             Log.d(TAG, "User drives array updated: " + bucketNumbers + ", matched: " + result.getMatchedCount() + ", modified: " + result.getModifiedCount());
         }
@@ -150,7 +150,11 @@ public class DriveManager {
     public static class Bucket {
         private final Service drive;
         private final int index;
-        private final Context context; // Added to provide context for API calls
+        private final Context context;
+
+        // Default total space values in bytes
+        private static final long GOOGLE_DRIVE_DEFAULT_TOTAL_SPACE = 15L * 1024 * 1024 * 1024; // 15 GB
+        private static final long DROPBOX_DEFAULT_TOTAL_SPACE = 2L * 1024 * 1024 * 1024;     // 2 GB
 
         Bucket(Service drive, int index, Context context) {
             this.drive = drive;
@@ -197,6 +201,43 @@ public class DriveManager {
                         return -1; // Unknown
                     }
                 }
+            }
+            return -1; // Unknown if drive is null or unrecognized
+        }
+
+        public long getTotalSpace() {
+            if (drive instanceof GoogleDrive) {
+                Drive googleDriveService = GoogleDriveHelper.getDriveService(context, ((GoogleDrive) drive).getAccountEmail());
+                if (googleDriveService != null) {
+                    try {
+                        com.google.api.services.drive.model.About about = googleDriveService.about().get()
+                                .setFields("storageQuota")
+                                .execute();
+                        Long limit = about.getStorageQuota().getLimit();
+                        return (limit != null && limit > 0) ? limit : GOOGLE_DRIVE_DEFAULT_TOTAL_SPACE;
+                    } catch (Exception e) {
+                        Log.e(TAG, "Failed to get Google Drive total space: " + e.getMessage());
+                        return GOOGLE_DRIVE_DEFAULT_TOTAL_SPACE; // Fallback to default
+                    }
+                }
+                return GOOGLE_DRIVE_DEFAULT_TOTAL_SPACE; // Fallback if service is null
+            } else if (drive instanceof DropboxService) {
+                DbxClientV2 dropboxClient = DropboxHelper.getDropboxClient(context,
+                        ((DropboxService) drive).getAccessToken(), ((DropboxService) drive).getRefreshToken());
+                if (dropboxClient != null) {
+                    try {
+                        com.dropbox.core.v2.users.SpaceUsage spaceUsage = dropboxClient.users().getSpaceUsage();
+                        if (spaceUsage.getAllocation().getIndividualValue() != null) {
+                            long allocated = spaceUsage.getAllocation().getIndividualValue().getAllocated();
+                            return allocated > 0 ? allocated : DROPBOX_DEFAULT_TOTAL_SPACE;
+                        }
+                        return DROPBOX_DEFAULT_TOTAL_SPACE;
+                    } catch (DbxException e) {
+                        Log.e(TAG, "Failed to get Dropbox total space: " + e.getMessage());
+                        return DROPBOX_DEFAULT_TOTAL_SPACE; // Fallback to default
+                    }
+                }
+                return DROPBOX_DEFAULT_TOTAL_SPACE; // Fallback if client is null
             }
             return -1; // Unknown if drive is null or unrecognized
         }
