@@ -33,9 +33,11 @@ async def start(update: Update, context: CallbackContext) -> None:
         "/login - Log in to your account\n"
         "/addbucket <bucket_type> - Add a new storage bucket (GoogleDrive or Dropbox)\n"
         "/storage - View Total Storage Information\n"
+        "/search <file_name> - Find a specific file from your syncly storage\n"
         "/list - List your files\n"
         "/upload - Just send a file from your Phone's File Explorer (or Drag and Drop on Desktop)\n"
-        "/download <file_name> - Download a file"
+        #"/download <file_name> - Download a file\n"
+        "/logout - Log out and end your session\n"
     )
 
 async def login(update: Update, context: CallbackContext) -> None:
@@ -45,6 +47,16 @@ async def login(update: Update, context: CallbackContext) -> None:
         f"Please log in via the web portal:\n{login_url}\n\n"
         "After logging in, copy the JWT and paste it here."
     )
+
+async def logout(update: Update, context: CallbackContext) -> None:
+    """Logs out the user by clearing their session data."""
+    if "jwt" in context.user_data:
+        username = context.user_data.get("username", "unknown")
+        context.user_data.clear()  # Clear all user data (jwt, username, list_offset, etc.)
+        logger.info(f"User {username} logged out")
+        await update.message.reply_text("✅ You have been logged out. Use /login to start a new session.")
+    else:
+        await update.message.reply_text("ℹ️ You're not logged in.")
 
 async def handle_jwt(update: Update, context: CallbackContext) -> None:
     """Handles the JWT pasted by the user."""
@@ -224,6 +236,47 @@ async def exit_listing(update: Update, context: CallbackContext) -> None:
     else:
         await update.message.reply_text("ℹ️ You’re not in file listing mode.")
 
+async def search_file(update: Update, context: CallbackContext) -> None:
+    """Searches for a file by name across all buckets."""
+    jwt = context.user_data.get("jwt")
+    if not jwt:
+        await update.message.reply_text("❌ Please log in first using /login.")
+        return
+
+    if len(context.args) < 1:
+        await update.message.reply_text("❌ Usage: /search <filename>")
+        return
+
+    filename = " ".join(context.args)
+    logger.info(f"Searching for file '{filename}' for user: {context.user_data.get('username', 'unknown')}")
+
+    try:
+        response = requests.get(
+            f"{API_BASE_URL}/search_files",
+            params={"query": filename, "limit": 1},  # exact_match=False by default
+            headers={"Authorization": f"Bearer {jwt}"}
+        )
+        response.raise_for_status()
+        
+        files = response.json()
+        logger.info(f"Search API Response: {files}")
+        
+        if files:
+            file = files[0]
+            size_str = file['size'] if file['size'] == "Unknown" else f"{int(file['size']) / 1024 / 1024:.2f} MB"
+            message = (
+                f"✅ File found:\n"
+                f"📄 {file['name']} ({file['provider']})\n"
+                f"Size: {size_str}\n"
+                f"Link: {file['path']}"
+            )
+            await update.message.reply_text(message)
+        else:
+            await update.message.reply_text(f"❌ No file named '{filename}' found in your buckets.")
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Failed to search for file '{filename}': {e}")
+        await update.message.reply_text(f"❌ Failed to search for file: {str(e)}")
+
 async def upload_file(update: Update, context: CallbackContext) -> None:
     """Uploads a file to Syncly."""
     jwt = context.user_data.get("jwt")
@@ -348,17 +401,18 @@ def main():
     """Start the bot."""
     app = Application.builder().token(TOKEN).build()
 
-    # Register commands
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("login", login))
-    app.add_handler(CommandHandler("addbucket", add_drive))
-    app.add_handler(CommandHandler("list", list_files))
-    app.add_handler(CommandHandler("download", download_file))
-    app.add_handler(CommandHandler("storage", storage_info))
-    app.add_handler(CommandHandler("more", more_files))  # Handler registration
-    app.add_handler(CommandHandler("exit", exit_listing))  # Handler registration
-    app.add_handler(MessageHandler(filters.Document.ALL, upload_file))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_jwt))  # Handle JWT input
+    app.add_handler(CommandHandler("start", start))         #start command
+    app.add_handler(CommandHandler("login", login))         #login command
+    app.add_handler(CommandHandler("addbucket", add_drive)) #add new bucket command
+    app.add_handler(CommandHandler("list", list_files))     #list files commandd
+    app.add_handler(CommandHandler("more", more_files))     #more files command
+    app.add_handler(CommandHandler("exit", exit_listing))   #exit file listing comamnd
+    app.add_handler(CommandHandler("search", search_file))  #search files command
+    #app.add_handler(CommandHandler("download", download_file))#download file command
+    app.add_handler(CommandHandler("storage", storage_info))    #storage info command
+    app.add_handler(CommandHandler("logout",logout))    #logout command
+    app.add_handler(MessageHandler(filters.Document.ALL, upload_file))  #upload file command
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_jwt))    #handle jwt command
 
     print("🤖 Bot is running...")
     app.run_polling()
