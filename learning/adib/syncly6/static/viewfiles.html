@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Syncly - Files</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1 class="dashboard">Your Files</h1>
+        <p class="tagline">View files across all your buckets</p>
+
+        <nav id="menu">
+            <a href="/static/homepage.html">Home</a>
+            <a href="#" id="logout-btn" onclick="logout()">Logout</a>
+        </nav>
+
+        <div id="files-list">
+            <h3>Files</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Provider</th>
+                        <th>Size</th>
+                        <th>Link</th>
+                    </tr>
+                </thead>
+                <tbody id="files-table-body">
+                    <!-- Populated by JavaScript -->
+                </tbody>
+            </table>
+            <button id="view-more-btn" style="display: none; margin-top: 10px;">View More</button>
+        </div>
+
+        <div id="error-message" style="color: red; display: none;"></div>
+
+        <footer>
+            © 2025 Syncly. All rights reserved.
+        </footer>
+    </div>
+
+    <script src="/static/js/viewfiles.js"></script>
+</body>
+</html>

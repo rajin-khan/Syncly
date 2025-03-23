@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Syncly</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <img src="/static/images/syncly.png" alt="Syncly" class="logo">
+        
+        <div class="form-container">
+            <h2>Login</h2>
+            <form id="loginForm">
+                <input type="text" id="username" placeholder="Username" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button type="submit">Login</button>
+            </form>
+            <p>Don't have an account? <a href="/static/register.html">Register here</a></p>
+        </div>
+
+        <div id="token-display" style="display: none;">
+            <h3>Your JWT:</h3>
+            <pre id="jwt-token"></pre>
+            <button id="copy-jwt-btn">Copy JWT to Clipboard</button>
+            <p>Redirecting in <span id="countdown">3</span> seconds...</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                console.log("Attempting login for user:", username); // Debug start
+                const response = await fetch('http://127.0.0.1:8000/token', { // Absolute URL
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
+                });
+
+                const result = await response.json();
+                console.log("Login response:", result);
+
+                if (response.ok) {
+                    // Store JWT in localStorage
+                    localStorage.setItem('jwt', result.access_token);
+                    console.log("JWT stored in localStorage:", result.access_token); // Confirm storage
+
+                    // Verify storage immediately
+                    const storedJwt = localStorage.getItem('jwt');
+                    console.log("Retrieved JWT from localStorage:", storedJwt); // Double-check
+
+                    // Display the JWT
+                    document.getElementById('jwt-token').textContent = result.access_token;
+                    document.getElementById('token-display').style.display = 'block';
+
+                    // Add event listener for the "Copy JWT" button
+                    document.getElementById('copy-jwt-btn').addEventListener('click', () => {
+                        navigator.clipboard.writeText(result.access_token)
+                            .then(() => {
+                                alert('JWT copied to clipboard!');
+                            })
+                            .catch((err) => {
+                                console.error('Failed to copy JWT:', err);
+                                alert('Failed to copy JWT. Please copy it manually.');
+                            });
+                    });
+
+                    // Start countdown and redirect
+                    let countdown = 10;
+                    const countdownElement = document.getElementById('countdown');
+                    countdownElement.textContent = countdown;
+
+                    const interval = setInterval(() => {
+                        countdown -= 1;
+                        countdownElement.textContent = countdown;
+                        if (countdown <= 0) {
+                            clearInterval(interval);
+                            console.log("Redirecting to homepage with JWT:", localStorage.getItem('jwt')); // Before redirect
+                            window.location.href = '/static/homepage.html';
+                        }
+                    }, 1000);
+                } else {
+                    console.error("Login failed with status:", response.status, "Detail:", result.detail);
+                    alert(result.detail || 'Login failed');
+                }
+            } catch (error) {
+                console.error("Error during login:", error);
+                alert("An error occurred. Please try again.");
+            }
+        });
+    </script>
+</body>
+</html>
