@@ -301,6 +301,65 @@ async def list_files(
     except Exception as e:
         logger.error(f"Error listing files: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error listing files: {str(e)}")
+    
+@app.get("/search_files", response_model=List[FileInfo], tags=["Files"])
+async def search_files(
+    query: str = Query(..., description="Filename to search for"),
+    limit: int = Query(1, description="Number of matching files to return (default: 1)"),
+    exact_match: bool = Query(False, description="Require exact filename match (default: contains)"),
+    current_user: dict = Depends(get_current_user)
+):
+    try:
+        drive_manager = DriveManager(user_id=current_user["_id"])
+        logger.info(f"User {current_user['username']} (ID: {str(current_user['_id'])}) searching for '{query}' with limit {limit}, exact_match={exact_match}")
+        
+        matching_files = []
+        seen_files = set()
+        
+        # Collect files from all drives, stopping when we have enough matches
+        for drive in drive_manager.drives:
+            try:
+                files = drive.listFiles(query=query)
+                logger.info(f"Retrieved {len(files)} files from {type(drive).__name__}: {[f['name'] for f in files]}")
+                for file in files:
+                    file_name = file.get("name", "Unknown")
+                    if file_name in seen_files:
+                        continue
+                    
+                    # Apply exact match filter if requested
+                    if exact_match and file_name != query:
+                        continue
+                    
+                    # Add file if it matches (exact or contains)
+                    if not exact_match and query.lower() not in file_name.lower():
+                        continue
+                    
+                    size = file.get("size", "Unknown")
+                    if isinstance(size, (int, float)):
+                        size = str(size)
+                    file_info = {
+                        "name": file_name,
+                        "provider": file.get("provider", "Unknown"),
+                        "size": size,
+                        "path": file.get("path", "N/A")
+                    }
+                    matching_files.append(file_info)
+                    seen_files.add(file_name)
+                    
+                    # Stop if we’ve found enough matches
+                    if len(matching_files) >= limit:
+                        break
+            except Exception as e:
+                logger.error(f"Error retrieving files from {type(drive).__name__}: {e}")
+            # Break outer loop if we have enough matches
+            if len(matching_files) >= limit:
+                break
+        
+        logger.info(f"Returning {len(matching_files)} matching files for query '{query}' for user {current_user['username']}")
+        return matching_files
+    except Exception as e:
+        logger.error(f"Error searching files: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error searching files: {str(e)}")
 
 @app.post("/files/upload", tags=["Files"])
 async def upload_file(
