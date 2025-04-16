@@ -5,13 +5,13 @@ import logging
 import dropbox
 from dropbox.exceptions import AuthError, ApiError
 from dropbox.oauth import DropboxOAuth2Flow
-from dropbox.files import FileMetadata, FolderMetadata, DeletedMetadata # Added imports
+from dropbox.files import FileMetadata, FolderMetadata, DeletedMetadata, SearchOptions, SearchOrderBy, FileStatus # Added more imports
 from Service import Service
 from Database import Database
-from typing import List, Dict, Optional # Added typing imports
+from typing import List, Dict, Optional
 
 # Set up logging
-logging.basicConfig(level=logging.INFO)
+# logging.basicConfig(level=logging.INFO) # Configure in api.py or main script
 logger = logging.getLogger(__name__)
 
 class DropboxService(Service):
@@ -19,126 +19,170 @@ class DropboxService(Service):
         self.token_dir = token_dir
         self.app_key = app_key
         self.app_secret = app_secret
-        self.service = None
+        self.service: Optional[dropbox.Dropbox] = None # Type hint for clarity
+        self.bucket_number: Optional[int] = None # <--- Add bucket_number attribute
         os.makedirs(self.token_dir, exist_ok=True)
         self.db = Database().get_instance()
 
     def authenticate(self, bucket_number, user_id):
         """
         Authenticate with Dropbox using AuthManager.
+        Stores the bucket_number on the instance upon successful authentication.
         """
         from AuthManager import AuthManager
         auth_manager = AuthManager(user_id, self.token_dir)
+        # Pass app key/secret during authentication
         self.service = auth_manager.authenticate_dropbox(bucket_number, self.app_key, self.app_secret)
+        if self.service:
+            self.bucket_number = bucket_number # <--- Store bucket number on success
+            logger.info(f"Dropbox instance authenticated for bucket {self.bucket_number}")
+        else:
+            logger.error(f"Dropbox authentication failed for bucket {bucket_number}")
+            self.bucket_number = None
         return self.service
 
     def listFiles(self, folder_path="", query: Optional[str] = None, max_results: Optional[int] = None) -> List[Dict]:
         """
         List files from Dropbox. If query is provided, attempts a simple name filter.
-        Changed default to non-recursive listing for performance.
+        Non-recursive listing.
+        (No changes needed here for Step D)
         """
         if not self.service:
             raise ValueError("Dropbox service not authenticated. Call authenticate() first.")
 
         files_list = []
         try:
-            # --- The Key Change is Here ---
-            logger.info(f"Listing Dropbox files in path: '{folder_path}' (Non-Recursive)")
+            logger.info(f"Listing Dropbox files (Bucket {self.bucket_number}) in path: '{folder_path}' (Non-Recursive)")
             result = self.service.files_list_folder(
-                path=folder_path if folder_path else "", # Ensure empty string for root
-                recursive=False # <--- SET THIS TO FALSE
+                path=folder_path if folder_path else "",
+                recursive=False
             )
-            # --- End Key Change ---
 
             while True:
                 for entry in result.entries:
-                    # Skip folders and deleted files explicitly
-                    if not isinstance(entry, FileMetadata):
-                        continue
+                    if not isinstance(entry, FileMetadata): continue # Skip folders/deleted
 
-                    # Simple name filtering if query is provided
-                    if query and query.lower() not in entry.name.lower():
-                        continue
+                    # Simple name filtering
+                    if query and query.lower() not in entry.name.lower(): continue
 
-                    # Try to get a shareable link (might fail if not shared)
+                    # Try to get a temporary link (might fail)
                     try:
+                        # Use path_display for temp link request
                         link_result = self.service.files_get_temporary_link(entry.path_display)
                         file_link = link_result.link
                     except ApiError as link_err:
-                        logger.debug(f"Could not get temporary link for Dropbox file {entry.name}: {link_err}. Using placeholder path.")
-                        file_link = f"dropbox:{entry.path_display}" # Placeholder
+                        logger.debug(f"Could not get temporary link for Dropbox file {entry.name}: {link_err}. Using path_lower.")
+                        file_link = f"dropbox:{entry.path_lower}" # Use path_lower as identifier
 
                     files_list.append({
                         "id": entry.id,
                         "name": entry.name,
-                        "size": entry.size,
-                        "path": file_link,
-                        "provider": "Dropbox"
+                        "size": entry.size, # Keep as number
+                        "path_lower": entry.path_lower, # Include path_lower for identification
+                        "path": file_link, # Keep display/temp link too
+                        "provider": "Dropbox",
+                        # "bucket": self.bucket_number # Add if needed elsewhere
                     })
 
-                    # Stop if max_results is reached
                     if max_results and len(files_list) >= max_results:
                         logger.info(f"Reached max_results limit ({max_results}) for Dropbox listFiles.")
-                        # Ensure exact limit is respected when returning early
                         return files_list[:max_results]
 
-
-                # Check if there are more entries on the current page
-                if not result.has_more:
-                    break
-
-                # Fetch the next page
+                if not result.has_more: break
                 logger.info("Fetching next page of Dropbox files...")
                 result = self.service.files_list_folder_continue(result.cursor)
 
-
         except ApiError as err:
-            # Handle potential errors like path not found specifically
             if isinstance(err.error, dropbox.files.ListFolderError) and err.error.is_path() and err.error.get_path().is_not_folder():
                  logger.warning(f"Dropbox path '{folder_path}' is not a folder.")
-                 return [] # Return empty list if path isn't a folder
+                 return []
             else:
-                logger.error(f"Dropbox API error during listFiles: {err}")
-                return [] # Return empty on other errors
+                logger.error(f"Dropbox API error during listFiles (Bucket {self.bucket_number}): {err}")
+                return []
         except Exception as e:
-            logger.error(f"An unexpected error occurred during Dropbox listFiles: {e}", exc_info=True)
+            logger.error(f"An unexpected error occurred during Dropbox listFiles (Bucket {self.bucket_number}): {e}", exc_info=True)
             return []
 
-        logger.info(f"Dropbox listFiles found {len(files_list)} files in '{folder_path}'.")
-        # Apply limit again in case the loop finished exactly at the limit or pagination ended
+        logger.info(f"Dropbox listFiles (Bucket {self.bucket_number}) found {len(files_list)} files in '{folder_path}'.")
         return files_list[:max_results] if max_results else files_list
 
-# ... rest of the DropboxService class (check_storage, searchFiles) ...
-# (Make sure searchFiles still works as intended - it uses a different API call)
+
     def check_storage(self) -> tuple[int, int]:
-        # (Keep implementation as is)
+        """
+        Check the storage quota for the authenticated Dropbox account.
+        (No changes needed here for Step D)
+        """
         if not self.service: logger.error("Service not authenticated."); return 0, 0
         try:
             usage = self.service.users_get_space_usage(); allocation = usage.allocation.get_individual() if usage.allocation.is_individual() else usage.allocation.get_team()
             limit = allocation.allocated if allocation else 0; usage_used = usage.used
-            logger.info(f"Dropbox Storage: {usage_used / (1024**3):.2f} GB used / {limit / (1024**3):.2f} GB total.")
+            logger.info(f"Dropbox Storage (Bucket {self.bucket_number}): {usage_used / (1024**3):.2f} GB used / {limit / (1024**3):.2f} GB total.")
             return limit, usage_used
-        except ApiError as err: logger.error(f"Dropbox API error checking storage: {err}"); return 0, 0
-        except Exception as e: logger.error(f"Unexpected error checking Dropbox storage: {e}"); return 0, 0
+        except ApiError as err: logger.error(f"Dropbox API error checking storage (Bucket {self.bucket_number}): {err}"); return 0, 0
+        except Exception as e: logger.error(f"Unexpected error checking Dropbox storage (Bucket {self.bucket_number}): {e}"); return 0, 0
 
     def searchFiles(self, query: str, limit: int = 10) -> List[Dict]:
-        # (Keep implementation as is - uses files_search_v2)
+        """
+        Searches for files matching the query string using files_search_v2.
+        Returns file metadata including the bucket number and access token.
+        """
         if not self.service: logger.error("Dropbox service not authenticated for search."); return []
+        if self.bucket_number is None: logger.error("Dropbox service authenticated but bucket_number is missing."); return []
+
         files_list = []
         try:
-            logger.info(f"Executing Dropbox search with query: '{query}'")
-            result = self.service.files_search_v2(query=query, options=dropbox.files.SearchOptions(max_results=min(limit * 2, 100), order_by=dropbox.files.SearchOrderBy.last_modified_time, file_status=dropbox.files.FileStatus.active))
+            logger.info(f"Executing Dropbox search (Bucket {self.bucket_number}) with query: '{query}'")
+            # Refine search options
+            search_options = SearchOptions(
+                max_results=min(limit * 2, 100), # Fetch slightly more in case some are folders
+                order_by=SearchOrderBy.relevance, # Use relevance for search
+                file_status=FileStatus.active
+            )
+            result = self.service.files_search_v2(query=query, options=search_options)
+
             count = 0
             for match in result.matches:
                 if count >= limit: break
                 metadata = match.metadata.get_metadata()
-                if isinstance(metadata, FileMetadata):
-                    try: link_result = self.service.files_get_temporary_link(metadata.path_display); file_link = link_result.link
-                    except ApiError as link_err: logger.debug(f"Could not get temp link for {metadata.name}: {link_err}."); file_link = f"dropbox:{metadata.path_display}"
-                    files_list.append({"id": metadata.id, "name": metadata.name, "size": metadata.size, "path": file_link, "provider": "Dropbox"}); count += 1
-        except ApiError as err: logger.error(f"Dropbox API error during searchFiles: {err}"); return files_list
-        except Exception as e: logger.error(f"Unexpected error during Dropbox searchFiles: {e}"); return []
-        logger.info(f"Dropbox search found {len(files_list)} files for query '{query}'.")
-        return files_list[:limit]
+                if isinstance(metadata, FileMetadata): # Only include files
+                    # Get a temporary link if needed for display, but path_lower is key
+                    try:
+                        link_result = self.service.files_get_temporary_link(metadata.path_display)
+                        file_link = link_result.link
+                    except ApiError as link_err:
+                        logger.debug(f"Could not get temp link for {metadata.name}: {link_err}. Using path_lower.")
+                        file_link = f"dropbox:{metadata.path_lower}"
+
+                    # Retrieve the access token associated with this service instance
+                    # This assumes the AuthManager correctly manages tokens per instance
+                    access_token = None
+                    if hasattr(self.service, 'session') and hasattr(self.service.session, 'access_token'):
+                        access_token = self.service.session.access_token
+                    elif hasattr(self.service, '_oauth2_access_token'): # Older client versions?
+                        access_token = self.service._oauth2_access_token
+
+                    if not access_token:
+                         logger.warning(f"Could not retrieve access token for Dropbox Bucket {self.bucket_number} during search. File context extraction might fail.")
+
+                    files_list.append({
+                        "id": metadata.id,
+                        "name": metadata.name,
+                        "size": metadata.size, # Keep as number
+                        "path_lower": metadata.path_lower, # Use path_lower as the primary identifier
+                        "path": file_link, # Keep display/temp link
+                        "provider": "Dropbox",
+                        "bucket": self.bucket_number, # <--- Include bucket number
+                        "access_token": access_token # <--- Include access token needed by DropBoxFile handler
+                    })
+                    count += 1
+
+            # Continue searching if `has_more` is true and limit not reached (not implemented here, basic limit)
+
+        except ApiError as err: logger.error(f"Dropbox API error during searchFiles (Bucket {self.bucket_number}): {err}"); return files_list # Return partial results
+        except Exception as e: logger.error(f"Unexpected error during Dropbox searchFiles (Bucket {self.bucket_number}): {e}"); return []
+
+        logger.info(f"Dropbox search (Bucket {self.bucket_number}) found {len(files_list)} files for query '{query}'.")
+        return files_list[:limit] # Ensure limit
+
 
 # --- END OF FILE Dropbox.py ---
