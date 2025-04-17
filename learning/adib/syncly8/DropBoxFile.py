@@ -11,6 +11,7 @@ from FileHandler import FileHandler
 from Database import Database
 from typing import Optional, List, Dict
 from DriveManager import DriveManager # Import DriveManager if needed for user_id context
+from Dropbox import DropboxService
 
 # --- Text Extraction Imports ---
 try:
@@ -216,32 +217,109 @@ class DropBoxFile(FileHandler):
         return extracted_text if extracted_text else None
 
     def download_file(self, file_path: str, save_path: str):
-        # ... (keep implementation as is) ...
-        pass
+        """
+        Downloads a file from Dropbox.
+        """
+        try:
+            # Ensure the directory exists
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
-    def search_file(self, query: str) -> Optional[str]:
-         # ... (keep implementation as is) ...
-         pass
+            # Download the file
+            with open(save_path, 'wb') as f:
+                metadata, res = self.dbx.files_download(file_path)
+                f.write(res.content)
+            print(f"File downloaded to: {save_path}")
+        except ApiError as err:
+            print(f"API error: {err}")
+        except PermissionError:
+            print(f"Permission denied: Cannot write to {save_path}. Check directory permissions.")
+        except Exception as e:
+            print(f"Error downloading file: {e}")
+
+    def search_file(self, query: str):
+        """
+        Searches for a file in Dropbox.
+        :param query: The search query (file name).
+        :return: Path to the file if found, otherwise None.
+        """
+        try:
+            result = self.dbx.files_search_v2(query=query).matches
+
+            if not result:
+                print(f"No files found with the name '{query}'.")
+                return None
+
+            for match in result:
+                metadata = match.metadata.get_metadata()
+                if isinstance(metadata, dropbox.files.FileMetadata):
+                    if metadata.name.lower() == query.lower():
+                        print(f"Found file: {metadata.name}")
+                        return metadata.path_lower
+
+            print(f"No exact match found for '{query}'.")
+            return None
+        except ApiError as err:
+            print(f"API error: {err}")
+        except Exception as e:
+            print(f"Error searching file: {e}")
 
     def download_and_merge_chunks(self, file_name, save_path):
-         # ... (keep implementation as is - notes it's likely incorrect) ...
-         pass
+        """Download and merge chunked files from Dropbox."""
+        os.makedirs(save_path, exist_ok=True)
+    
+        try:
+            result = self.dbx.files_search_v2(query=file_name).matches
+            chunk_files = [entry.metadata.get_metadata() for entry in result if ".part" in entry.metadata.name]
+    
+            if not chunk_files:
+                logging.info(f"No chunked files found for '{file_name}'.")
+                return None
+    
+            # Sort chunks by part number
+            chunk_files.sort(key=lambda x: int(re.search(r'\.part(\d+)', x.name).group(1)))
+    
+            original_filename = re.sub(r'\.part\d+$', '', chunk_files[0].name)
+            merged_file_path = os.path.join(save_path, original_filename)
+    
+            if os.path.exists(merged_file_path):
+                logging.info(f"File {merged_file_path} already exists. Skipping download.")
+                return merged_file_path
+    
+            chunk_paths = []
+            for file in chunk_files:
+                chunk_path = os.path.join(save_path, file.name)  # Save with original chunk name temporarily
+                self.download_file(file.path_lower, chunk_path)
+                if os.path.exists(chunk_path):
+                    chunk_paths.append(chunk_path)
+    
+            self.merge_chunks(chunk_paths, merged_file_path)
+    
+            for chunk_path in chunk_paths:
+                os.remove(chunk_path)
+    
+            logging.info(f"Merged file saved at: {merged_file_path}")
+            return merged_file_path
+        except Exception as e:
+            logging.error(f"Error downloading chunked files: {e}")
+            return None
 
-    def merge_chunks(self, file_paths: List[str], merged_file_path: str):
-         # ... (keep implementation as is) ...
-         pass
+    def merge_chunks(self, file_paths, merged_file_path):
+        """Merge downloaded file chunks into a single file."""
+        with open(merged_file_path, "wb") as merged_file:
+            for chunk_path in file_paths:
+                with open(chunk_path, "rb") as chunk:
+                    merged_file.write(chunk.read())
+
+        logging.info(f"Merged file saved at: {merged_file_path}")
 
     def split_and_upload_file(self, file_path, file_name, mimetype, file_size, free_space, metadata):
-         # ... (keep implementation as is - raises NotImplementedError) ...
-        raise NotImplementedError("File splitting/chunking for Dropbox needs specific implementation.")
-
+        return super().split_and_upload_file(file_path, file_name, mimetype, file_size, free_space, metadata)
+    
     def update_metadata(self, metadata):
-        # This is the public abstract method, call the internal one
-        self._update_metadata(metadata)
-
+        return super().update_metadata(metadata)
+    
     def upload_chunk(self, chunk_str, mimetype, file_name, chunk_index):
-         # ... (keep implementation as is - raises NotImplementedError) ...
-        raise NotImplementedError("Use upload_session methods for Dropbox chunking.")
+        return super().upload_chunk(chunk_str, mimetype, file_name, chunk_index)
 
 
 # --- END OF FILE DropBoxFile.py ---

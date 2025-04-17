@@ -300,42 +300,74 @@ async def add_drive(request: AddDriveRequest, current_user: Dict = Depends(get_c
     except Exception as e: logger.error(f"Failed to add drive for user {current_user['username']}: {e}", exc_info=True); raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to add {request.drive_type}. Error: {e}")
 
 
-# --- File Endpoints ---
+# --- CORRECTED /viewfiles Endpoint ---
 @app.get("/viewfiles", response_model=List[FileInfo], tags=["Files"])
-async def list_files( query: Optional[str] = Query(None), limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0), current_user: Dict = Depends(get_current_user)):
-    user_id = current_user["_id"]; drive_manager = DriveManager(user_id=user_id); username = current_user['username']
-    if not drive_manager.drives: return []
-    all_files = []; seen_files = set() # Simple duplicate check by name for listing
-    logger.info(f"Listing files for user {username} (query: '{query}', limit: {limit}, offset: {offset})")
+async def list_files(
+    query: Optional[str] = Query(None),
+    limit: int = Query(50, ge=1, le=200), # User/Bot requested limit
+    offset: int = Query(0, ge=0),
+    current_user: Dict = Depends(get_current_user)
+):
+    user_id = current_user["_id"]
+    drive_manager = DriveManager(user_id=user_id)
+    username = current_user['username']
+    if not drive_manager.drives:
+        return []
+
+    all_files_data = [] # Store raw dicts from all drives first
+    logger.info(f"Listing files for {username} (q='{query}', limit={limit}, offset={offset})")
+
     for drive in drive_manager.drives:
         try:
-            # listFiles should return size as int/None and mimeType
-            files_data = drive.listFiles(query=query, max_results=limit*2); # Fetch more initially? No, let listFiles handle limit.
             provider = type(drive).__name__
-            for file_data in files_data:
-                file_name = file_data.get("name", "Unknown")
-                # Use file_name for seen check in simple listing
-                if file_name not in seen_files:
-                    # Convert to FileInfo model
-                    size_val = file_data.get("size")
-                    size_int = int(size_val) if size_val is not None and str(size_val).isdigit() else None
-                    file_info = FileInfo(
-                         id=file_data.get("id"), name=file_name,
-                         provider=file_data.get("provider", provider),
-                         size=size_int, path=file_data.get("path", "N/A"),
-                         mimeType=file_data.get("mimeType"),
-                         bucket=file_data.get("bucket"), # Ensure listFiles provides this if needed
-                         path_lower=file_data.get("path_lower") # Ensure listFiles provides this if needed
-                    )
-                    all_files.append(file_info)
-                    seen_files.add(file_name)
-        except Exception as e: logger.error(f"Error retrieving files from {type(drive).__name__} for user {username}: {e}", exc_info=True)
+            # --- FIX: Call listFiles WITHOUT max_results from the API request ---
+            # Let the underlying listFiles methods use their own internal limits/paging
+            logger.debug(f"Calling {provider}.listFiles with query='{query}' (using internal limits)")
+            files_data = drive.listFiles(query=query) # REMOVED max_results=limit
+            # --- END FIX ---
 
-    # Sort before pagination
-    all_files.sort(key=lambda x: x.name.lower());
-    paginated_files = all_files[offset : offset + limit]
-    logger.info(f"Returning {len(paginated_files)} files (offset: {offset}, limit: {limit}) out of {len(all_files)} total found for user {username}")
-    return paginated_files
+            # Add provider info if missing and bucket number
+            for file_d in files_data:
+                 if "provider" not in file_d: file_d["provider"] = provider
+                 if "bucket" not in file_d and hasattr(drive, "bucket_number"):
+                     file_d["bucket"] = drive.bucket_number
+            all_files_data.extend(files_data)
+            logger.info(f"Collected {len(files_data)} files from {provider}")
+
+        except Exception as e:
+            logger.error(f"Error listing from {type(drive).__name__} for {username}: {e}", exc_info=True)
+
+    # --- De-duplicate and Sort AFTER collecting from all drives ---
+    logger.info(f"Collected {len(all_files_data)} total files before de-duplication.")
+    unique_files_dict = {}
+    for file_data in all_files_data:
+        # Use provider and name as key for simple listing de-duplication
+        key = (file_data.get("provider", "?"), file_data.get("name", "Unknown"))
+        if key not in unique_files_dict:
+             unique_files_dict[key] = file_data
+
+    sorted_unique_files_data = sorted(unique_files_dict.values(), key=lambda x: x.get("name", "").lower())
+    total_unique_files = len(sorted_unique_files_data)
+    logger.info(f"Found {total_unique_files} unique files.")
+
+    # --- Apply pagination to the final sorted, unique list ---
+    paginated_files_data = sorted_unique_files_data[offset : offset + limit]
+
+    # Convert final paginated list to FileInfo model
+    results = []
+    for file_data in paginated_files_data:
+        try:
+            # Convert size to int/None before model validation
+            size_val = file_data.get("size")
+            size_int = int(size_val) if size_val is not None and str(size_val).isdigit() else None
+            file_data["size"] = size_int # Update dict before unpacking
+            results.append(FileInfo(**file_data))
+        except Exception as model_err:
+            logger.warning(f"Skipping file model creation error: {model_err}. Data: {file_data}")
+
+    logger.info(f"Returning {len(results)} files (offset={offset}, limit={limit}) out of {total_unique_files} unique files found for {username}")
+    return results
+# --- END CORRECTED /viewfiles ---
 
 @app.get("/search_files", response_model=List[FileInfo], tags=["Files"])
 async def search_files_endpoint( query: str = Query(...), limit: int = Query(10, ge=1, le=50), current_user: Dict = Depends(get_current_user)):
@@ -582,15 +614,15 @@ async def llm_ask_endpoint( request_data: AskRequest, current_user: Dict = Depen
     memory = session_memory.get(telegram_user_id, [])
     system_prompt = ( # Refined system prompt
         "You are Syncly AI, a helpful assistant integrated into the Syncly file management application. "
-        "Answer the user's questions concisely based *primarily* on the provided conversation history and the relevant file context. "
+        "Answer the user's questions concisely based *primarily* on the provided conversation history and the relevant file context."
         "The File Context includes:\n"
         "1. A list of potentially relevant files found by searching the user's cloud drives based on keywords from the latest question.\n"
         "2. Extracted text snippets from the beginning of some of those text-based files (like PDF, DOCX, TXT).\n"
         "Prioritize information from the extracted snippets if they are relevant to the question. "
         "If the snippets don't answer the question, use the file list and conversation history. "
         "If no relevant context is found (empty file list or snippets), state that clearly and answer based on general knowledge if appropriate. "
-        "Speak as if you either know or don't know the information directly. Do not mention where you found the extractd snippets unless explicitly asked."
-        "Do NOT claim to have 'read' the entire file; you only see the provided snippets. Be factual about your limitations."
+        "Speak as if you either know or don't know the information directly. Do not mention that you found information from the extracted snippets, just state the information you find."
+        "Do NOT claim to have 'read' the entire file; you only see the provided snippets. Be factual about your limitations, but make no mention of extracted snippets, although you are allowed to retrieve extra information from it if needed for a query."
     )
     full_messages = [{"role": "system", "content": system_prompt}]
     full_messages.extend([msg for msg in memory if msg.get("role") != "system"])
