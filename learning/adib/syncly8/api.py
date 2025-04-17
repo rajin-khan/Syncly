@@ -133,41 +133,62 @@ def extract_keywords_simple(text: str, min_len: int = 3) -> str:
     except Exception as e: logger.error(f"Error during simple keyword extraction: {e}", exc_info=True); return ""
 
 async def get_search_keywords_from_llm(question: str) -> str:
-    """Uses a preliminary LLM call to extract search keywords."""
+    """
+    Uses a preliminary LLM call to extract search keywords from the user's question.
+    Focuses ONLY on the current question, ignoring history.
+    """
     if not question: return ""
     if not GROQ_API_KEY:
-        logger.warning("Groq API key not available, cannot use LLM for keyword extraction. Falling back.")
-        return extract_keywords_simple(question) # Fallback
+        logger.warning("Groq API key not available, using simple keyword extraction.")
+        return extract_keywords_simple(question)
 
     keyword_model = "llama-3.1-8b-instant"
+
+    # --- REFINED SYSTEM PROMPT ---
     system_prompt = (
-        "Your task is to extract the 1-3 main keywords or topics from the User Question below, "
-        "which will be used to search a file system. Focus on nouns and essential terms. "
-        "Output *only* the keywords, separated by a single space. Do not use punctuation. Do not add any explanation or introductory text. "
-        "Example 1: User Question: 'Do I have notes about the French Revolution?' Output: 'french revolution notes'\n"
-        "Example 2: User Question: 'search for budget spreadsheet 2024' Output: 'budget spreadsheet 2024'\n"
-        "Example 3: User Question: 'what files mention the Project Alpha deadline?' Output: 'project alpha deadline'"
+        "Analyze the User Question below to identify the 1-5 core nouns, topics, or file identifiers "
+        "that would be most useful for searching a file system (Google Drive, Dropbox) to find relevant documents. "
+        "Focus ONLY on the current question. Ignore any conversational context or previous turns. "
+        "Consider filenames, document types (e.g., 'schedule', 'meeting notes', 'report'), specific entities, dates, or project names mentioned. "
+        "Output *only* the keywords, separated by a single space. Use lowercase. Do not use punctuation. Do not add any explanation or introductory text.\n"
+        "Example 1: User Question: 'Do any of the parents teacher days or my separate meetings clash?' Output: 'parents teacher day meetings schedule clash dates'\n"
+        "Example 2: User Question: 'search for the lora paper pdf' Output: 'lora paper pdf'\n"
+        "Example 3: User Question: 'what files mention the Project Alpha deadline?' Output: 'project alpha deadline file'\n"
+        "Example 4: User Question: 'summarize chapter 3 of my economics notes' Output: 'economics notes chapter 3'"
     )
-    messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": f"User Question: '{question}'"}]
+    # --- END REFINED SYSTEM PROMPT ---
+
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": f"User Question: '{question}'"} # Clearly label input
+    ]
 
     try:
         logger.info(f"Getting search keywords from LLM ({keyword_model}) for question: '{question[:50]}...'")
         client = Groq(api_key=GROQ_API_KEY)
         completion = await asyncio.to_thread( # Run blocking Groq call in thread
-            client.chat.completions.create, model=keyword_model, messages=messages, temperature=0.1, max_tokens=50,
+            client.chat.completions.create,
+            model=keyword_model,
+            messages=messages,
+            temperature=0.1,
+            max_tokens=60, # Slightly increased max tokens for potentially more keywords
         )
         raw_keywords = completion.choices[0].message.content.strip()
         logger.info(f"Raw LLM keyword response: '{raw_keywords}'")
-        # Parsing logic
+
+        # --- Parsing (Keep as is) ---
         keywords = raw_keywords.lower()
         prefixes_to_remove = ["keywords:", "output:", "keywords ", "output "]
         for prefix in prefixes_to_remove:
             if keywords.startswith(prefix): keywords = keywords[len(prefix):].strip()
         keywords = keywords.translate(str.maketrans('', '', string.punctuation))
         keywords = re.sub(r'\s+', ' ', keywords).strip()
+        # --- End Parsing ---
+
         if not keywords:
              logger.warning("LLM keyword extraction returned an empty string after parsing. Falling back.")
              return extract_keywords_simple(question)
+
         logger.info(f"Cleaned LLM extracted keywords: '{keywords}'")
         return keywords
     except Exception as e:
@@ -513,7 +534,7 @@ async def llm_ask_endpoint( request_data: AskRequest, current_user: Dict = Depen
 
             # --- Step 3: Extract Text Snippets ---
             if relevant_files:
-                files_to_extract_from = []; MAX_FILES_TO_EXTRACT = 3; count = 0
+                files_to_extract_from = []; MAX_FILES_TO_EXTRACT = 5; count = 0
                 for file in relevant_files:
                     if count >= MAX_FILES_TO_EXTRACT: break
                     file_ext = os.path.splitext(file.name)[1].lower()
@@ -568,6 +589,7 @@ async def llm_ask_endpoint( request_data: AskRequest, current_user: Dict = Depen
         "Prioritize information from the extracted snippets if they are relevant to the question. "
         "If the snippets don't answer the question, use the file list and conversation history. "
         "If no relevant context is found (empty file list or snippets), state that clearly and answer based on general knowledge if appropriate. "
+        "Speak as if you either know or don't know the information directly. Do not mention where you found the extractd snippets unless explicitly asked."
         "Do NOT claim to have 'read' the entire file; you only see the provided snippets. Be factual about your limitations."
     )
     full_messages = [{"role": "system", "content": system_prompt}]

@@ -127,9 +127,11 @@ class GoogleDrive(Service):
         except HttpError as error: logger.error(f"An error occurred checking Google Drive storage (Bucket {self.bucket_number}): {error}"); return 0, 0
         except Exception as e: logger.error(f"Unexpected error checking GDrive storage (Bucket {self.bucket_number}): {e}"); return 0, 0
 
+# In GoogleDrive.py
+
     def searchFiles(self, query: str, limit: int = 10) -> List[Dict]:
         """
-        Searches for files matching the query string in name or content.
+        Searches for files matching the query string (keywords) in name or content using OR logic.
         Returns file metadata including the bucket number.
         """
         if not self.service: logger.error("Google Drive service not authenticated for search."); return []
@@ -137,44 +139,59 @@ class GoogleDrive(Service):
 
         files_list = []
         page_token = None
-        # Escape single quotes for safety in the query
-        safe_query = query.replace("'", "\\'")
-        search_query = f"(name contains '{safe_query}' or fullText contains '{safe_query}') and trashed = false"
-        logger.info(f"Executing Google Drive search (Bucket {self.bucket_number}) with query: {search_query}")
+
+        # --- Build OR Query ---
+        keywords = query.split() # Assumes keywords are space-separated
+        if not keywords:
+             logger.warning("Empty keyword list received for GDrive search.")
+             return []
+
+        query_parts = []
+        for keyword in keywords:
+            safe_keyword = keyword.replace("'", "\\'") # Escape single quotes
+            if safe_keyword: # Avoid empty strings
+                query_parts.append(f"name contains '{safe_keyword}'")
+                query_parts.append(f"fullText contains '{safe_keyword}'")
+
+        if not query_parts:
+             logger.warning("No valid query parts generated for GDrive search.")
+             return []
+
+        # Combine parts with 'or', add 'trashed = false'
+        search_query = f"({' or '.join(query_parts)}) and trashed = false"
+        # --- End Build OR Query ---
+
+        logger.info(f"Executing Google Drive OR search (Bucket {self.bucket_number}) with query: {search_query}")
 
         try:
+            # (Rest of the search loop logic remains the same as before)
             while len(files_list) < limit:
-                page_size = min(limit - len(files_list), 100) # Fetch up to limit or 100
+                page_size = min(limit - len(files_list), 100)
                 results = self.service.files().list(
                     pageSize=page_size,
-                    fields="nextPageToken, files(id, name, mimeType, size, webViewLink)", # Ensure mimeType is fetched
+                    fields="nextPageToken, files(id, name, mimeType, size, webViewLink)",
                     pageToken=page_token,
                     q=search_query,
-                    orderBy="modifiedTime desc" # Order by relevance/modified time? Drive default is fine.
+                    orderBy="modifiedTime desc" # Prioritize recently modified? Or relevance? Drive default might be okay.
                 ).execute()
 
                 for file in results.get("files", []):
                     files_list.append({
-                        "id": file.get("id"),
-                        "name": file.get("name", "Unknown"),
-                        "size": file.get("size"), # Keep as number or None
-                        "mimeType": file.get("mimeType"), # Include mimeType
+                        "id": file.get("id"), "name": file.get("name", "Unknown"),
+                        "size": file.get("size"), "mimeType": file.get("mimeType"),
                         "path": file.get("webViewLink", f"https://drive.google.com/file/d/{file.get('id')}/view"),
-                        "provider": "GoogleDrive",
-                        "bucket": self.bucket_number # <--- Include bucket number
+                        "provider": "GoogleDrive", "bucket": self.bucket_number
                     })
-                    if len(files_list) >= limit: break # Stop once limit is reached
-
-                if len(files_list) >= limit: break # Exit outer loop if limit reached
+                    if len(files_list) >= limit: break
+                if len(files_list) >= limit: break
 
                 page_token = results.get("nextPageToken")
-                if not page_token: break # No more pages
+                if not page_token: break
 
-        except HttpError as error: logger.error(f"An HTTP error occurred during GDrive searchFiles (Bucket {self.bucket_number}): {error}"); return files_list # Return what we have so far
-        except Exception as e: logger.error(f"Unexpected error during GDrive searchFiles (Bucket {self.bucket_number}): {e}"); return [] # Return empty on unexpected errors
+        except HttpError as error: logger.error(f"An HTTP error occurred during GDrive searchFiles (Bucket {self.bucket_number}): {error}"); return files_list
+        except Exception as e: logger.error(f"Unexpected error during GDrive searchFiles (Bucket {self.bucket_number}): {e}"); return []
 
-        logger.info(f"Google Drive search (Bucket {self.bucket_number}) found {len(files_list)} files for query '{query}'.")
-        return files_list[:limit] # Ensure limit is strictly enforced
-
+        logger.info(f"Google Drive search (Bucket {self.bucket_number}) found {len(files_list)} files for OR query.")
+        return files_list[:limit]
 
 # --- END OF FILE GoogleDrive.py ---

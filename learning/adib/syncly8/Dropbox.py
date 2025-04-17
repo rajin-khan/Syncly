@@ -5,7 +5,7 @@ import logging
 import dropbox
 from dropbox.exceptions import AuthError, ApiError
 from dropbox.oauth import DropboxOAuth2Flow
-from dropbox.files import FileMetadata, FolderMetadata, DeletedMetadata, SearchOptions, SearchOrderBy, FileStatus # Added more imports
+from dropbox.files import FileMetadata, FolderMetadata, DeletedMetadata, SearchOptions, SearchOrderBy, FileStatus, SearchMode # Added more imports
 from Service import Service
 from Database import Database
 from typing import List, Dict, Optional
@@ -123,66 +123,61 @@ class DropboxService(Service):
 
     def searchFiles(self, query: str, limit: int = 10) -> List[Dict]:
         """
-        Searches for files matching the query string using files_search_v2.
-        Returns file metadata including the bucket number and access token.
+        Searches for files matching ANY of the query keywords using files_search_v2.
+        Returns file metadata including bucket number and access token.
         """
         if not self.service: logger.error("Dropbox service not authenticated for search."); return []
         if self.bucket_number is None: logger.error("Dropbox service authenticated but bucket_number is missing."); return []
 
         files_list = []
         try:
-            logger.info(f"Executing Dropbox search (Bucket {self.bucket_number}) with query: '{query}'")
-            # Refine search options
+            # The query string itself for Dropbox search v2 often handles OR implicitly
+            # We just pass the space-separated keywords extracted by the LLM.
+            logger.info(f"Executing Dropbox search (Bucket {self.bucket_number}) with query terms: '{query}'")
+
             search_options = SearchOptions(
-                max_results=min(limit * 2, 100), # Fetch slightly more in case some are folders
-                order_by=SearchOrderBy.relevance, # Use relevance for search
-                file_status=FileStatus.active
+                max_results=min(limit * 2, 100), # Fetch more to filter folders/limit
+                order_by=SearchOrderBy.relevance, # Use relevance
+                file_status=FileStatus.active,
+                # --- Use OR logic explicitly if simple query isn't enough ---
+                # mode=SearchMode.filename_and_content # Search name and content
+                # For v2, just passing the query string usually implies OR between terms for content search.
+                # Let's stick with the default implicit OR for now.
             )
+
+            # The query string is just the space-separated keywords
             result = self.service.files_search_v2(query=query, options=search_options)
 
             count = 0
             for match in result.matches:
                 if count >= limit: break
                 metadata = match.metadata.get_metadata()
-                if isinstance(metadata, FileMetadata): # Only include files
-                    # Get a temporary link if needed for display, but path_lower is key
+                if isinstance(metadata, FileMetadata): # Only files
                     try:
-                        link_result = self.service.files_get_temporary_link(metadata.path_display)
-                        file_link = link_result.link
+                        link_result = self.service.files_get_temporary_link(metadata.path_display); file_link = link_result.link
                     except ApiError as link_err:
-                        logger.debug(f"Could not get temp link for {metadata.name}: {link_err}. Using path_lower.")
-                        file_link = f"dropbox:{metadata.path_lower}"
+                        logger.debug(f"Could not get temp link for {metadata.name}: {link_err}."); file_link = f"dropbox:{metadata.path_lower}"
 
-                    # Retrieve the access token associated with this service instance
-                    # This assumes the AuthManager correctly manages tokens per instance
                     access_token = None
-                    if hasattr(self.service, 'session') and hasattr(self.service.session, 'access_token'):
-                        access_token = self.service.session.access_token
-                    elif hasattr(self.service, '_oauth2_access_token'): # Older client versions?
-                        access_token = self.service._oauth2_access_token
-
-                    if not access_token:
-                         logger.warning(f"Could not retrieve access token for Dropbox Bucket {self.bucket_number} during search. File context extraction might fail.")
+                    if hasattr(self.service, 'session') and hasattr(self.service.session, 'access_token'): access_token = self.service.session.access_token
+                    elif hasattr(self.service, '_oauth2_access_token'): access_token = self.service._oauth2_access_token
+                    if not access_token: logger.warning(f"Could not retrieve access token for Dropbox Bucket {self.bucket_number} during search.")
 
                     files_list.append({
-                        "id": metadata.id,
-                        "name": metadata.name,
-                        "size": metadata.size, # Keep as number
-                        "path_lower": metadata.path_lower, # Use path_lower as the primary identifier
-                        "path": file_link, # Keep display/temp link
-                        "provider": "Dropbox",
-                        "bucket": self.bucket_number, # <--- Include bucket number
-                        "access_token": access_token # <--- Include access token needed by DropBoxFile handler
+                        "id": metadata.id, "name": metadata.name, "size": metadata.size,
+                        "path_lower": metadata.path_lower, "path": file_link,
+                        "provider": "Dropbox", "bucket": self.bucket_number,
+                        "access_token": access_token
                     })
                     count += 1
 
-            # Continue searching if `has_more` is true and limit not reached (not implemented here, basic limit)
+            # TODO: Handle pagination with result.has_more and result.cursor if needed
 
-        except ApiError as err: logger.error(f"Dropbox API error during searchFiles (Bucket {self.bucket_number}): {err}"); return files_list # Return partial results
+        except ApiError as err: logger.error(f"Dropbox API error during searchFiles (Bucket {self.bucket_number}): {err}"); return files_list
         except Exception as e: logger.error(f"Unexpected error during Dropbox searchFiles (Bucket {self.bucket_number}): {e}"); return []
 
         logger.info(f"Dropbox search (Bucket {self.bucket_number}) found {len(files_list)} files for query '{query}'.")
-        return files_list[:limit] # Ensure limit
+        return files_list[:limit]
 
 
 # --- END OF FILE Dropbox.py ---
