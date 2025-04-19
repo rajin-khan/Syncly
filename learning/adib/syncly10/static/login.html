@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Syncly</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <style>
+        /* Simple error message style */
+        .error-message {
+            color: #ff4d4d; /* Light red */
+            background-color: rgba(255, 77, 77, 0.1);
+            border: 1px solid rgba(255, 77, 77, 0.3);
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 15px;
+            text-align: center;
+            font-size: 0.9em;
+            display: none; /* Hidden by default */
+        }
+        /* Style for success message for Bot flow */
+        #success-message-bot {
+            display: none; /* Hidden by default */
+            text-align: center;
+            margin-top: 20px;
+            padding: 20px;
+            background-color: rgba(77, 255, 77, 0.1); /* Light green background */
+            border-radius: 8px;
+            border: 1px solid rgba(77, 255, 77, 0.3);
+        }
+         /* Style for token display (for non-bot/standard flow) */
+        #token-display-standard {
+             display: none; /* Hidden by default */
+             margin-top: 20px;
+             background-color: rgba(255, 255, 255, 0.05);
+             padding: 20px;
+             border-radius: 8px;
+             border: 1px solid rgba(255, 255, 255, 0.1);
+             text-align: left;
+        }
+        #token-display-standard h3 { margin-top: 0; font-weight: 300; color: rgba(255, 255, 255, 0.9); }
+        #token-display-standard pre { background-color: rgba(0, 0, 0, 0.2); padding: 12px; border-radius: 4px; word-wrap: break-word; font-family: 'Courier New', monospace; color: rgba(255, 255, 255, 0.8); font-size: 14px; max-height: 100px; overflow-y: auto; }
+        #token-display-standard button { margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="/static/images/syncly.png" alt="Syncly" class="logo">
+
+        <!-- Login Form Container -->
+        <div class="form-container" id="login-form-container">
+            <h2 id="login-title">Login</h2> <!-- Title might change via JS -->
+            <form id="loginForm">
+                <input type="text" id="username" placeholder="Username" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <!-- Hidden input to store link_id if present -->
+                <input type="hidden" id="link_id" name="link_id">
+                <button type="submit" id="login-button">Login</button>
+            </form>
+            <!-- Error display area -->
+            <div id="login-error" class="error-message"></div>
+            <p>Don't have an account? <a href="/static/register.html" id="register-link">Register here</a></p>
+        </div>
+
+        <!-- Message shown after successful login via BOT link -->
+        <div id="success-message-bot">
+             <h2>✅ Login Successful!</h2>
+             <p>You can now close this window and return to your Telegram chat.</p>
+             <p><small>Your bot session is now authenticated. Try using a command like /storage.</small></p>
+         </div>
+
+        <!-- Message/Token shown for standard login (no link_id) -->
+        <div id="token-display-standard">
+            <h3>Login Successful (Web Session)</h3>
+            <p>Your JWT for direct API access:</p>
+            <pre id="jwt-token"></pre>
+            <button id="copy-jwt-btn">Copy JWT</button>
+            <!-- Redirect logic for standard web flow -->
+            <p>Redirecting to homepage in <span id="countdown">5</span> seconds...</p>
+        </div>
+    </div>
+
+    <script>
+        // Function to get URL parameters
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        // --- On Page Load ---
+        const linkIdFromUrl = getQueryParam('link_id');
+        const loginTitleElement = document.getElementById('login-title');
+        const registerLinkElement = document.getElementById('register-link');
+        const loginFormContainerElement = document.getElementById('login-form-container');
+        const successMessageBotDiv = document.getElementById('success-message-bot');
+        const tokenDisplayStandardDiv = document.getElementById('token-display-standard');
+        const errorDivElement = document.getElementById('login-error');
+        const linkIdInputElement = document.getElementById('link_id');
+        const loginButton = document.getElementById('login-button');
+
+        if (linkIdFromUrl) {
+            console.log("Login page loaded with link_id:", linkIdFromUrl);
+            linkIdInputElement.value = linkIdFromUrl; // Store link_id in the hidden input
+            loginTitleElement.textContent = "Login to Connect Bot"; // Update title for clarity
+            // Optionally, update register link if registration should also handle link_id
+            // registerLinkElement.href += '?link_id=' + linkIdFromUrl;
+        } else {
+            console.log("Login page loaded for standard web flow (no link_id).");
+        }
+
+        // --- Form Submission Handler ---
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault(); // Prevent default page reload
+            loginButton.disabled = true; // Disable button during request
+            loginButton.textContent = "Logging in...";
+            errorDivElement.style.display = 'none'; errorDivElement.textContent = ''; // Hide previous errors
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            // Get link_id from the hidden input; will be null if standard flow
+            const currentLinkId = linkIdInputElement.value || null;
+
+            const payload = { username: username, password: password, link_id: currentLinkId };
+
+            try {
+                console.log("Attempting login with payload:", payload);
+                // Use relative URL for the API endpoint
+                const response = await fetch('/token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                let result = {}; // Initialize result object
+                try {
+                    // Check content type before parsing JSON
+                    const contentType = response.headers.get("content-type");
+                    if (contentType && contentType.includes("application/json")) {
+                        result = await response.json();
+                    } else {
+                        // If not JSON, treat as an error, likely HTML error page
+                        const textResponse = await response.text();
+                        throw new Error(`Unexpected response format (Status: ${response.status}). Content: ${textResponse.substring(0, 200)}...`);
+                    }
+                    console.log("Login API response:", response.status, result);
+                } catch (parseError) {
+                     console.error("Error parsing API response:", parseError);
+                     errorDivElement.textContent = parseError.message || "Failed to process server response.";
+                     errorDivElement.style.display = 'block';
+                     loginButton.disabled = false; loginButton.textContent = "Login"; // Re-enable button
+                     return; // Stop processing
+                }
+
+                if (response.ok) { // Status 200-299
+                    if (result.message && currentLinkId) { // Bot Link flow successful response
+                        console.log("Bot link login flow successful.");
+                        loginFormContainerElement.style.display = 'none'; // Hide form
+                        tokenDisplayStandardDiv.style.display = 'none';
+                        successMessageBotDiv.style.display = 'block'; // Show success message for bot
+                    } else if (result.access_token && !currentLinkId) { // Standard Web flow successful response
+                        console.log("Standard web login flow successful.");
+                        localStorage.setItem('jwt', result.access_token); // Store for web app use
+                        document.getElementById('jwt-token').textContent = result.access_token;
+                        loginFormContainerElement.style.display = 'none'; // Hide form
+                        successMessageBotDiv.style.display = 'none';
+                        tokenDisplayStandardDiv.style.display = 'block'; // Show JWT display
+
+                        document.getElementById('copy-jwt-btn').addEventListener('click', () => {
+                             navigator.clipboard.writeText(result.access_token)
+                                 .then(() => alert('JWT copied!'))
+                                 .catch(err => console.error('Copy failed:', err));
+                         });
+
+                        // Start countdown and redirect for standard web flow only
+                        let countdown = 5;
+                        const countdownElement = document.getElementById('countdown');
+                        countdownElement.textContent = countdown;
+                        const interval = setInterval(() => {
+                            countdown -= 1;
+                            countdownElement.textContent = countdown;
+                            if (countdown <= 0) {
+                                clearInterval(interval);
+                                window.location.href = '/static/homepage.html'; // Redirect web user
+                            }
+                        }, 1000);
+
+                    } else { // Unexpected success response format
+                         console.error("Login succeeded but response format was unexpected:", result);
+                         errorDivElement.textContent = "Login succeeded but received an unexpected server response.";
+                         errorDivElement.style.display = 'block';
+                    }
+                } else { // Handle API ERROR responses (4xx, 5xx) that were valid JSON
+                    console.error("Login failed:", response.status, result.detail);
+                    errorDivElement.textContent = result.detail || `Login failed (Error ${response.status}). Please check credentials.`;
+                    errorDivElement.style.display = 'block';
+                }
+            } catch (error) { // Handle network errors (fetch couldn't connect etc.)
+                console.error("Network or other error during login fetch:", error);
+                errorDivElement.textContent = "Could not connect to the login server. Please check your network and try again.";
+                errorDivElement.style.display = 'block';
+            } finally {
+                 // Re-enable button unless successful bot login occurred (page should be closed)
+                if (successMessageBotDiv.style.display !== 'block') {
+                     loginButton.disabled = false;
+                     loginButton.textContent = "Login";
+                 }
+            }
+        });
+    </script>
+</body>
+</html>
