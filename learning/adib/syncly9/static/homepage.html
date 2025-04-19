@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Syncly - Home</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1 class="dashboard">Welcome to Syncly!</h1>
+        <p class="tagline">Syncly - Split. Sync. Simplify.</p>
+
+        <div id="storage-info">
+            <h3>Storage Details</h3>
+            <p>Total Storage: <span id="total-storage">Loading...</span> GB</p>
+            <p>Used Space: <span id="used-space">Loading...</span> GB</p>
+            <p>Free Space: <span id="free-space">Loading...</span> GB</p>
+        </div>
+
+        <nav id="menu">
+            <a href="/static/viewfiles.html">View Files</a>
+            <a href="#" onclick="toggleForm('upload-form')">Upload File</a>
+            <a href="#" onclick="toggleForm('download-form')">Download File</a>
+            <a href="#" onclick="toggleForm('bucket-form')">Add New Bucket</a>
+            <a href="#" id="logout-btn" onclick="logout()">Logout</a>
+        </nav>
+
+        <div id="upload-form" class="form-container" style="display: none;">
+            <h2>Upload File</h2>
+            <input type="file" id="upload-file" accept="*/*">
+            <button onclick="uploadFile()">Upload</button>
+        </div>
+
+        <div id="download-form" class="form-container" style="display: none;">
+            <h2>Download File</h2>
+            <input type="text" id="download-file-name" placeholder="Enter file name (with extension)">
+            <button onclick="downloadFile()">Download</button>
+        </div>
+
+        <div id="bucket-form" class="form-container" style="display: none;">
+            <h2>Add New Bucket</h2>
+            <select id="bucket-type">
+                <option value="GoogleDrive">Google Drive</option>
+                <option value="Dropbox">Dropbox</option>
+            </select>
+            <button onclick="addBucket()">Add Bucket</button>
+        </div>
+
+        <div id="error-message" style="color: red; display: none;"></div>
+
+        <footer>
+            © 2025 Syncly. All rights reserved.
+        </footer>
+    </div>
+
+    <script src="/static/js/homepage.js"></script>
+</body>
+</html>

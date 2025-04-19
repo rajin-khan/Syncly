@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Syncly</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <style>
+        /* Simple error message style */
+        .error-message {
+            color: #ff4d4d; /* Light red */
+            background-color: rgba(255, 77, 77, 0.1);
+            border: 1px solid rgba(255, 77, 77, 0.3);
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 15px;
+            text-align: center;
+            font-size: 0.9em;
+            display: none; /* Hidden by default */
+        }
+        /* Style for success message */
+        #success-message {
+            display: none; /* Hidden by default */
+            text-align: center;
+            margin-top: 20px;
+            padding: 20px;
+            background-color: rgba(77, 255, 77, 0.1); /* Light green background */
+            border-radius: 8px;
+            border: 1px solid rgba(77, 255, 77, 0.3);
+        }
+         /* Style for token display (for non-bot flow) */
+        #token-display {
+             display: none; /* Hidden by default */
+             margin-top: 20px;
+             background-color: rgba(255, 255, 255, 0.05);
+             padding: 20px;
+             border-radius: 8px;
+             border: 1px solid rgba(255, 255, 255, 0.1);
+             text-align: left;
+        }
+        #token-display h3 { margin-top: 0; font-weight: 300; color: rgba(255, 255, 255, 0.9); }
+        #token-display pre { background-color: rgba(0, 0, 0, 0.2); padding: 12px; border-radius: 4px; word-wrap: break-word; font-family: 'Courier New', monospace; color: rgba(255, 255, 255, 0.8); font-size: 14px; max-height: 100px; overflow-y: auto; }
+        #token-display button { margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="/static/images/syncly.png" alt="Syncly" class="logo">
+
+        <!-- Login Form Container -->
+        <div class="form-container" id="login-form-container">
+            <h2>Login</h2>
+            <form id="loginForm">
+                <input type="text" id="username" placeholder="Username" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <!-- Hidden input to store link_id -->
+                <input type="hidden" id="link_id" name="link_id">
+                <button type="submit">Login</button>
+            </form>
+            <!-- Error display area -->
+            <div id="login-error" class="error-message"></div>
+            <p>Don't have an account? <a href="/static/register.html" id="register-link">Register here</a></p>
+        </div>
+
+        <!-- Message shown after successful login via link -->
+        <div id="success-message">
+             <h2>✅ Login Successful!</h2>
+             <p>You can now close this window and return to your Telegram chat.</p>
+             <p><small>Your bot session is now authenticated.</small></p>
+         </div>
+
+        <!-- Message shown for standard login (no link_id) - Kept for testing/API use -->
+        <div id="token-display">
+            <h3>Your JWT (For API Access):</h3>
+            <pre id="jwt-token"></pre>
+            <button id="copy-jwt-btn">Copy JWT</button>
+            <p><small>This token can be used for direct API access. It's not needed for the bot if you logged in via a link from Telegram.</small></p>
+            <!-- Removed countdown/redirect logic -->
+        </div>
+    </div>
+
+    <script>
+        // Function to get URL parameters
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        // --- On Page Load ---
+        const linkIdFromUrl = getQueryParam('link_id');
+        const registerLink = document.getElementById('register-link');
+        const loginFormContainer = document.getElementById('login-form-container');
+        const successMessageDiv = document.getElementById('success-message');
+        const tokenDisplayDiv = document.getElementById('token-display');
+        const errorDiv = document.getElementById('login-error');
+        const linkIdInput = document.getElementById('link_id');
+
+        if (linkIdFromUrl) {
+            console.log("Link ID found in URL:", linkIdFromUrl);
+            linkIdInput.value = linkIdFromUrl; // Store it in the hidden input
+            // Modify register link to include link_id if needed for register flow too
+            // registerLink.href = registerLink.href + '?link_id=' + linkIdFromUrl;
+        } else {
+            console.log("No Link ID found in URL (Standard login flow).");
+        }
+
+        // --- Form Submission Handler ---
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault(); // Prevent default page reload
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const currentLinkId = linkIdInput.value || null; // Get from hidden input, send null if empty
+            errorDiv.style.display = 'none'; errorDiv.textContent = ''; // Hide previous errors
+
+            const payload = { username: username, password: password, link_id: currentLinkId };
+
+            try {
+                console.log("Attempting login with payload:", payload);
+                // Use a RELATIVE URL for the API endpoint
+                const response = await fetch('/token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                let result = {}; // Initialize result object
+                try {
+                    result = await response.json(); // Attempt to parse JSON
+                    console.log("Login API response:", response.status, result);
+                } catch (jsonError) {
+                     // Handle non-JSON responses (like HTML error pages from server issues)
+                     console.error("Failed to parse API response as JSON:", jsonError);
+                     const responseText = await response.text(); // Get raw text
+                     result = { detail: `Server error (Status: ${response.status}). Response: ${responseText.substring(0, 200)}...` }; // Create error detail
+                     // Treat as error even if status was somehow 2xx but not JSON
+                     errorDiv.textContent = result.detail;
+                     errorDiv.style.display = 'block';
+                     return; // Stop processing
+                }
+
+                if (response.ok) { // Status 200-299
+                    if (result.message && currentLinkId) { // Link flow successful response
+                        console.log("Link login flow successful.");
+                        loginFormContainer.style.display = 'none';
+                        tokenDisplayDiv.style.display = 'none';
+                        successMessageDiv.style.display = 'block'; // Show success message
+                    } else if (result.access_token && !currentLinkId) { // Standard flow successful response
+                        console.log("Standard login flow successful.");
+                        localStorage.setItem('jwt', result.access_token); // Store for potential other uses
+                        document.getElementById('jwt-token').textContent = result.access_token;
+                        loginFormContainer.style.display = 'none';
+                        successMessageDiv.style.display = 'none';
+                        tokenDisplayDiv.style.display = 'block'; // Show JWT display
+                        document.getElementById('copy-jwt-btn').addEventListener('click', () => {
+                             navigator.clipboard.writeText(result.access_token)
+                                 .then(() => alert('JWT copied!'))
+                                 .catch(err => console.error('Copy failed:', err));
+                         });
+                    } else { // Unexpected success response format
+                         console.error("Login succeeded but response format was unexpected:", result);
+                         errorDiv.textContent = "Login succeeded but received an unexpected response format.";
+                         errorDiv.style.display = 'block';
+                    }
+                } else { // Handle API ERROR responses (4xx, 5xx) parsed as JSON
+                    console.error("Login failed:", response.status, result.detail);
+                    errorDiv.textContent = result.detail || `Login failed (${response.status}).`;
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) { // Handle network errors (fetch couldn't connect etc.)
+                console.error("Network or other error during login fetch:", error);
+                errorDiv.textContent = "Could not connect to the server. Please check connection and try again.";
+                errorDiv.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
