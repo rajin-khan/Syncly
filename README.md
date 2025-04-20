@@ -6,66 +6,116 @@
 
 # Syncly
 
-#### **Split. Sync. Simplify.**
+#### **Split. Sync. Simplify. Smarten.**
 
-**Syncly** is meant to be a powerful **aggregator** designed to seamlessly **split**, **upload**, and **manage** large files across multiple accounts and services (Google Drive, OneDrive, DropBox). With **Syncly**, you will be able to store massive files effortlessly, search efficiently, and access your data from a unified interface.
+**Syncly** is a next-generation **unified cloud file management platform**, designed to **split**, **upload**, **search**, and **manage** massive files across multiple cloud services — all in one place. With intelligent AI support and seamless multi-platform access, **Syncly** empowers you to store, retrieve, and interact with your data effortlessly.
 
 ---
 
 ## Features
 
+### 🔹 Core File Management
+
+**Multi-Cloud Support:**
+- Connects with **Google Drive** and **Dropbox**.
+- Unified view and management of files across all accounts ("buckets").
+
 **File Splitting & Uploading:**
+- Automatically selects the drive with the most free space for uploads.
+- Handles intelligent file routing and secure storage distribution.
 
-A. Automatically splits large files and uploads them across multiple accounts and services.
+**File Listing & Downloading:**
+- View and paginate through all your files.
+- Download files directly via the Web UI.
 
-B. Secure and efficient storage distribution.
+**Powerful Search:**
+- Search across all connected cloud accounts.
+- Provider-specific full-text search integration.
 
-**Unified Search:**
-
-A. Search across all connected Google Drive accounts from a single interface.
-
-B. Includes reverse image search capabilities.
-
-**Multi-Platform Support:**
-
-A. Web Interface: Built with React for an intuitive user experience.
-
-B. Mobile App: Developed using Kotlin/Java for seamless access on Android devices.
-
-C. Telegram Bot: Upload and search files using simple commands.
-
-**Download Functionality:**
-
-A. Web and mobile interfaces allow easy file retrieval.
-
-**Security:**
-
-A. OAuth 2.0 authentication for secure Google Drive access.
-
-B. File encryption before upload for enhanced privacy. (Tentative)
+**Storage Aggregation:**
+- Displays total, used, and free storage across all connected drives.
 
 ---
 
-## 🧑🏻‍💻 Tech Stack (Tentative)
+### 🔹 Secure User Management
 
-- **Frontend:** Vite + React (TypeScript) (Web), Kotlin/Java (Mobile)
-- **Backend:** Python (Flask/FastAPI) or Node.js (Express)
-- **Database:** PostgreSQL/MySQL for metadata management
-- **Cloud Storage:** Google Drive API
-- **Project Management:** Trello
+**Registration and Login:**
+- Secure account creation with password hashing (SHA256 + Base64).
+- JWT-powered sessions for Web UI and Bot.
+
+**Bot Authentication:**
+- Seamless Telegram Bot login via secure, temporary links.
+- Automatic account association with Telegram ID after login.
+
+**Logout and Session Management:**
+- Full control over sessions for enhanced security.
+
+---
+
+### 🔹 Cloud Storage Integration (Bucket Management)
+
+**Adding New Buckets:**
+- Connect multiple Google Drive or Dropbox accounts.
+- OAuth 2.0 flows securely handled.
+
+**Token Management:**
+- Securely stores and refreshes tokens for continued access.
+
+---
+
+### 🧪 AI-Powered Assistant
+
+**Conversational AI Interface:**
+- Engage with a powerful AI through the Telegram bot.
+
+**Smart Search Assistant:**
+- Extracts keywords from your questions.
+- Contextually searches your files for matching content.
+- Extracts relevant snippets from PDFs, DOCX, TXT, and code files.
+
+**Memory & Reset:**
+- Maintains rolling conversation history per Telegram user.
+- /reset command available to clear AI memory when needed.
+
+**Context-Aware Responses:**
+- Synthesizes detailed answers based on your files and questions.
+
+---
+
+### 🛸 Multi-Platform Access
+
+**Web Interface:**
+- FastAPI-served HTML, CSS, and JavaScript frontend.
+- Access file management, uploads, downloads, and bucket management.
+
+**Telegram Bot:**
+- Command-line style interaction.
+- Upload, search, manage storage, and chat with AI right from Telegram.
+
+---
+
+## 👨‍💻 Tech Stack (Updated)
+
+- **Frontend:** Vite + React (Web) | Java (Mobile)
+- **Backend:** Python (FastAPI)
+- **Database:** MongoDB (Secure storage of user and token data)
+- **Cloud Storage:** Google Drive, Dropbox APIs
+- **AI/LLM Integration:** Groq API (Llama 3.1 8B/70B models)
 - **Version Control:** Git with GitHub
+- **Deployment:** Railway (Planned)
+- **Project Management:** Trello
 
 ---
 
-## 🗂️ Project Structure (Tentative)
+## 🗂️ Project Structure
 
 </div>
 
 ```
 Syncly/
 ├── 📂 frontend/      # Vite + React (TypeScript) Web Application
-├── 📂 mobile/        # Android App (Kotlin/Java)
-├── 📂 backend/       # API Backend (Flask/FastAPI or Express)
+├── 📂 mobile/        # Android App (Kotlin/Java) (Planned)
+├── 📂 backend/       # API Backend (FastAPI)
 ├── 📂 bot/           # Telegram Bot
 ├── 📂 docs/          # Documentation
 ├── 📂 tests/         # Automated Tests
@@ -89,10 +139,10 @@ This project is licensed under the **MIT License**.
 
 ## 👥 The Team:
 
-| Name                      | Institution             | ID | GitHub | Followers |
-|---------------------------|-------------------------|--  |--------|------|
-| **Rajin Khan**            | North South University | 2212708042 | [![Rajin's GitHub](https://img.shields.io/badge/-rajin--khan-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/rajin-khan) | ![Followers](https://img.shields.io/github/followers/rajin-khan?label=Follow&style=social) |
-| **Ahnaf Ojayer**    | North South University | 2121949042 | [![Ahnaf's GitHub](https://img.shields.io/badge/-0jayer-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/0jayer) | ![Followers](https://img.shields.io/github/followers/0jayer?label=Follow&style=social) |
-| **Rihal Mahmood**    | North South University | 2132378042 | [![Rihal's GitHub](https://img.shields.io/badge/-RihalMahmood-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/RihalMahmood) | ![Followers](https://img.shields.io/github/followers/RihalMahmood?label=Follow&style=social) |
+| Name              | Institution             | ID | GitHub | Followers |
+|-------------------|--------------------------|----|--------|-----------|
+| **Rajin Khan**    | North South University   | 2212708042 | [![Rajin's GitHub](https://img.shields.io/badge/-rajin--khan-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/rajin-khan) | ![Followers](https://img.shields.io/github/followers/rajin-khan?label=Follow&style=social) |
+| **Ahnaf Ojayer**  | North South University   | 2121949042 | [![Ahnaf's GitHub](https://img.shields.io/badge/-0jayer-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/0jayer) | ![Followers](https://img.shields.io/github/followers/0jayer?label=Follow&style=social) |
+| **Rihal Mahmood** | North South University   | 2132378042 | [![Rihal's GitHub](https://img.shields.io/badge/-RihalMahmood-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/RihalMahmood) | ![Followers](https://img.shields.io/github/followers/RihalMahmood?label=Follow&style=social) |
 
 </div>
