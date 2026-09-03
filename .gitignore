@@ -2,3 +2,9 @@
 tokens/
 client_secret.json
 credentials.json
+
+# Generated files
+__pycache__/
+*.py[cod]
+.gradle/
+**/app/build/
